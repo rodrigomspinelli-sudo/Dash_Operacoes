@@ -1,0 +1,2024 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Central da Operação</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2230;--border:#21262d;
+  --accent:#f0b429;--accent2:#3b82f6;--accent3:#10b981;
+  --danger:#ef4444;--warn:#f97316;--purple:#8b5cf6;
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh}
+
+/* ── HEADER ── */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:600}
+.logo{display:flex;align-items:center;gap:11px}
+.logo-icon{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.logo h1{font-size:15px;font-weight:600;letter-spacing:-.3px}
+.logo span{font-size:11px;color:var(--text3)}
+.last-upd{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+
+/* ── UPLOAD ── */
+#upload-panel{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.up-label{font-size:12px;color:var(--text2);font-weight:500;white-space:nowrap}
+.up-grp{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.up-item{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 11px;cursor:pointer;transition:border-color .2s}
+.up-item:hover{border-color:var(--accent)}
+.up-item.loaded{border-color:var(--accent3)}
+.up-item input{display:none}
+.up-item .un{font-size:12px;font-weight:500;white-space:nowrap}
+.up-item .us{font-size:10px;font-family:'DM Mono',monospace;padding:2px 6px;border-radius:9px;background:var(--border);color:var(--text3)}
+.up-item.loaded .us{background:rgba(16,185,129,.15);color:var(--accent3)}
+.up-dot{width:7px;height:7px;border-radius:50%;background:var(--border);flex-shrink:0}
+.up-item.loaded .up-dot{background:var(--accent3)}
+.btn-apply{background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;white-space:nowrap}
+.btn-apply:hover{opacity:.85}
+.btn-apply:disabled{opacity:.4;cursor:not-allowed}
+#up-info{font-size:11px;color:var(--text3)}
+
+/* ── TABS ── */
+#tab-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;gap:0;position:sticky;top:57px;z-index:150}
+.tab-btn{padding:12px 20px;font-size:13px;font-weight:500;color:var(--text3);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
+.tab-btn:hover{color:var(--text2)}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--accent)}
+.tab-indicator{font-size:10px;font-family:'DM Mono',monospace;background:var(--surface2);border-radius:8px;padding:1px 6px;margin-left:5px;color:var(--text3)}
+.tab-btn.active .tab-indicator{background:rgba(240,180,41,.15);color:var(--accent)}
+
+/* ── FILTER BAR (per tab) ── */
+.filter-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 28px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.fg{display:flex;align-items:center;gap:5px}
+.fg label{font-size:11px;color:var(--text3);white-space:nowrap}
+select,input[type=date]{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s;max-width:160px}
+select:focus,input[type=date]:focus{border-color:var(--accent)}
+.btn-clr{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:4px 11px;font-size:12px;cursor:pointer;transition:border-color .2s}
+.btn-clr:hover{border-color:var(--accent)}
+.fsep{width:1px;height:16px;background:var(--border);margin:0 3px}
+
+/* ── TAB PANELS ── */
+.tab-panel{display:none;padding:20px 28px}
+.tab-panel.active{display:block}
+
+/* ── KPI ROW ── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:13px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px 14px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc,var(--accent))}
+.kpi-lbl{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.kpi-val{font-size:24px;font-weight:700;letter-spacing:-1px;line-height:1}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:5px}
+
+/* ── GRIDS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+.g12{display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:14px}
+@media(max-width:900px){.g2,.g3,.g21,.g12{grid-template-columns:1fr}}
+
+/* ── CARD ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:14px}
+.card.no-mb{margin-bottom:0}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ct{font-size:13px;font-weight:600}
+.cs{font-size:11px;color:var(--text3)}
+.cwrap{position:relative}
+
+/* ── TABLE ── */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--surface2);color:var(--text3);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.4px;padding:7px 11px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s}
+tbody tr:hover{background:var(--surface2)}
+tbody td{padding:7px 11px;color:var(--text2)}
+.mono{font-family:'DM Mono',monospace}
+.tr{text-align:right}
+.tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:9px;font-weight:500}
+.tg{background:rgba(16,185,129,.15);color:var(--accent3)}
+.ty{background:rgba(240,180,41,.15);color:var(--accent)}
+.tr2{background:rgba(239,68,68,.15);color:var(--danger)}
+.tb{background:rgba(59,130,246,.15);color:var(--accent2)}
+.tgr{background:var(--border);color:var(--text3)}
+
+/* ── PCT BAR ── */
+.pct-cell{display:flex;align-items:center;gap:7px}
+.pb-wrap{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:40px}
+.pb-fill{height:100%;border-radius:2px}
+.pv{font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap;min-width:42px;text-align:right}
+
+/* ── STATUS LIST ── */
+.st-list{display:flex;flex-direction:column;gap:6px}
+.st-row{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:6px;background:var(--surface2)}
+.st-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.st-name{flex:1;font-size:12px;color:var(--text2)}
+.st-cnt{font-size:12px;font-weight:600;font-family:'DM Mono',monospace}
+.st-pct{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;width:44px;text-align:right}
+
+/* ── PROG BARS ── */
+.prog-wrap{display:flex;flex-direction:column;gap:9px}
+.prog-item{display:flex;flex-direction:column;gap:3px}
+.prog-lr{display:flex;justify-content:space-between;font-size:11px;color:var(--text2)}
+.prog-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px}
+
+/* ── COMBO LEGEND ── */
+.combo-leg{display:flex;align-items:center;gap:14px;margin-bottom:10px;flex-wrap:wrap}
+.cli{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.cl-dot{width:10px;height:10px;border-radius:2px}
+.cl-line{width:18px;height:2px;border-radius:1px}
+
+/* ── SECTION TITLE ── */
+.sec{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin:4px 0 13px;display:flex;align-items:center;gap:8px}
+.sec::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── DEBUG BAR ── */
+#dbg-bar{background:#0d2137;border-bottom:1px solid #1e3a52;padding:5px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:11px;font-family:'DM Mono',monospace}
+.di{display:flex;align-items:center;gap:5px}
+.dd{width:7px;height:7px;border-radius:50%;background:var(--border)}
+.dd.ok{background:var(--accent3)}.dd.warn{background:var(--warn)}.dd.err{background:var(--danger)}
+.dl{color:var(--text3)}.dv{color:var(--text2);font-weight:500}
+.dsep{color:var(--border)}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* date quick-buttons */
+.dqbtn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s}
+.dqbtn:hover{border-color:var(--accent);color:var(--text)}
+.dqbtn.active{background:rgba(240,180,41,.15);border-color:var(--accent);color:var(--accent);font-weight:600}
+
+/* scrollable table wrapper */
+.scroll-table{overflow-y:auto;overflow-x:auto;border-radius:6px}
+
+/* search box */
+.tbl-search{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 10px;font-size:12px;font-family:inherit;outline:none;width:100%;margin-bottom:8px;transition:border-color .2s}
+.tbl-search:focus{border-color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon" id="hdr-icon" style="background:var(--accent2)">🚚</div>
+    <div><h1 id="hdr-title">Acompanhamento de Entregas</h1><span id="hdr-sub">Notas em Trânsito · Status em Tempo Real</span></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <button id="nav-btn" onclick="openDashboard()" style="background:rgba(240,180,41,.12);border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">📊 Tela Dashboard</button>
+    <span class="last-upd" id="last-upd"></span>
+  </div>
+</header>
+
+<!-- ══════ PASSWORD MODAL ══════ -->
+<div id="pwd-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;align-items:center;justify-content:center;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px 36px;width:320px;text-align:center">
+    <div style="font-size:28px;margin-bottom:12px">🔒</div>
+    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">Tela Dashboard</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Digite a senha para acessar</div>
+    <input id="pwd-input" type="password" placeholder="Senha" 
+      style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;margin-bottom:8px;text-align:center"
+      onkeydown="if(event.key==='Enter')checkPwd()">
+    <div id="pwd-error" style="font-size:11px;color:var(--danger);height:16px;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="document.getElementById('pwd-modal').style.display='none'" 
+        style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit">Cancelar</button>
+      <button onclick="checkPwd()" 
+        style="flex:1;background:var(--accent);border:none;color:#000;border-radius:6px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ TELA DE ACOMPANHAMENTO (overlay) ══════ -->
+<div id="acomp-overlay" style="display:block;background:var(--bg)">
+
+
+  <!-- Upload -->
+  <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:12px;color:var(--text2);font-weight:500">Base:</span>
+    <label class="up-item" id="lbl-ac" style="cursor:pointer">
+      <div class="up-dot" id="udot-ac"></div>
+      <input type="file" id="f-ac" accept=".xlsx,.xls,.csv" style="display:none">
+      <span style="font-size:12px;font-weight:500">📋 Planilha de Entregas (.xlsx / .csv)</span>
+      <span class="us" id="us-ac">Aguardando</span>
+    </label>
+    <button class="btn-apply" id="btn-ac" disabled onclick="applyAcomp()">Aplicar</button>
+    <span id="ac-info" style="font-size:11px;color:var(--text3)"></span>
+    <span style="font-size:11px;color:var(--text3)">· Se carregar 0 linhas: exporte como CSV no Excel</span>
+  </div>
+
+  <!-- Content -->
+  <div style="padding:22px 28px" id="acomp-content">
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:14px;color:var(--text3)">
+      <div style="font-size:44px">🚚</div>
+      <div style="font-size:17px;font-weight:600;color:var(--text2)">Nenhum dado carregado</div>
+      <div style="font-size:13px;text-align:center;max-width:400px;line-height:1.6">Carregue a planilha de entregas (mesmo formato da Cobertura) e clique em <strong>Aplicar</strong>.</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN DASHBOARD OVERLAY -->
+<div id="main-dashboard" style="display:none;position:fixed;top:57px;left:0;right:0;bottom:0;background:var(--bg);z-index:400;overflow-y:auto">
+<!-- UPLOAD -->
+<div id="upload-panel">
+  <span class="up-label">Bases:</span>
+  <div class="up-grp">
+    <label class="up-item" id="lbl-n"><div class="up-dot"></div><input type="file" id="f-notas" accept=".xlsx,.xls"><span class="un">📄 Base_Notas.xlsx</span><span class="us" id="us-n">Aguardando</span></label>
+    <label class="up-item" id="lbl-c"><div class="up-dot"></div><input type="file" id="f-cob" accept=".xlsx,.xls,.csv"><span class="un">🚚 Cobertura (.xlsx/.csv)</span><span class="us" id="us-c">Aguardando</span></label>
+    <label class="up-item" id="lbl-a"><div class="up-dot"></div><input type="file" id="f-av" accept=".csv,.xlsx,.xls"><span class="un">⚠️ Base_Avarias.csv</span><span class="us" id="us-a">Aguardando</span></label>
+  </div>
+  <button class="btn-apply" id="btn-apply" disabled>Aplicar Dados</button>
+  <span id="up-info">Carregue ao menos uma base · Se Cobertura mostrar 0 linhas, reimporte o arquivo</span>
+</div>
+
+<!-- DEBUG -->
+<div id="dbg-bar">
+  <span style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Diagnóstico:</span>
+  <div class="di"><div class="dd" id="dd-n"></div><span class="dl">Notas:</span><span class="dv" id="dv-n">—</span></div>
+  <div class="dsep">|</div>
+  <div class="di"><div class="dd" id="dd-c"></div><span class="dl">Cobertura:</span><span class="dv" id="dv-c">—</span></div>
+  <div class="dsep">|</div>
+  <div class="di"><div class="dd" id="dd-a"></div><span class="dl">Avarias:</span><span class="dv" id="dv-a">—</span></div>
+  <div class="dsep">|</div>
+  <div class="di"><span class="dl">Storage:</span><span class="dv" id="dv-st">—</span></div>
+  <div class="dsep">|</div>
+  <div class="di"><span class="dl">Erro:</span><span class="dv" id="dv-err" style="color:var(--accent3)">nenhum</span></div>
+</div>
+
+<!-- TABS -->
+<div id="tab-bar">
+  <button class="tab-btn active" data-tab="fat" onclick="switchTab('fat')">📦 Faturamento<span class="tab-indicator" id="ti-fat">—</span></button>
+  <button class="tab-btn" data-tab="ent" onclick="switchTab('ent')">🚚 Entregas<span class="tab-indicator" id="ti-ent">—</span></button>
+  <button class="tab-btn" data-tab="av" onclick="switchTab('av')">⚠️ Avarias<span class="tab-indicator" id="ti-av">—</span></button>
+</div>
+
+<!-- ══════════ TAB: FATURAMENTO ══════════ -->
+<div class="tab-panel active" id="tab-fat">
+  <div class="filter-bar" id="fb-fat">
+    <div class="fg"><label>Canal:</label><select id="fat-canal"><option value="">Todos</option></select></div>
+    <div class="fg"><label>Transportadora:</label><select id="fat-transp"><option value="">Todas</option></select></div>
+    <div class="fg"><label>UF:</label><select id="fat-uf"><option value="">Todas</option></select></div>
+    <div class="fg"><label>Região:</label><select id="fat-regiao"><option value="">Todas</option></select></div>
+    <div class="fsep"></div>
+    <button class="dqbtn" id="fat-q30" onclick="setQuick('fat',30)">30d</button>
+    <button class="dqbtn" id="fat-q60" onclick="setQuick('fat',60)">60d</button>
+    <button class="dqbtn" id="fat-q90" onclick="setQuick('fat',90)">90d</button>
+    <div class="fg"><label>De:</label><input type="date" id="fat-de"></div>
+    <div class="fg"><label>Até:</label><input type="date" id="fat-ate"></div>
+    <button class="btn-clr" onclick="clearFilters('fat')">↺ Limpar</button><span id="fat-click-label" style="font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;display:none"></span>
+  </div>
+  <div id="fat-content" style="padding:20px 0"></div>
+</div>
+
+<!-- ══════════ TAB: ENTREGAS ══════════ -->
+<div class="tab-panel" id="tab-ent">
+  <div class="filter-bar" id="fb-ent">
+    <div class="fg"><label>Canal:</label><select id="ent-canal"><option value="">Todos</option></select></div>
+    <div class="fg"><label>Transportadora:</label><select id="ent-transp"><option value="">Todas</option></select></div>
+    <div class="fg"><label>UF:</label><select id="ent-uf"><option value="">Todas</option></select></div>
+    <div class="fg"><label>Região:</label><select id="ent-regiao"><option value="">Todas</option></select></div>
+    <div class="fg"><label>Praça:</label><select id="ent-praca"><option value="">Todas</option></select></div>
+    <div class="fsep"></div>
+    <button class="dqbtn" id="ent-q30" onclick="setQuick('ent',30)">30d</button>
+    <button class="dqbtn" id="ent-q60" onclick="setQuick('ent',60)">60d</button>
+    <button class="dqbtn" id="ent-q90" onclick="setQuick('ent',90)">90d</button>
+    <div class="fg"><label>De:</label><input type="date" id="ent-de"></div>
+    <div class="fg"><label>Até:</label><input type="date" id="ent-ate"></div>
+    <button class="btn-clr" onclick="clearFilters('ent')">↺ Limpar</button><button class="btn-clr" id="ent-drill-clr" onclick="resetDrills('ent')" style="display:none;border-color:var(--accent);color:var(--accent)">✕ Drill</button><span id="ent-drill-label" style="font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;display:none"></span>
+  </div>
+  <div id="ent-content" style="padding:20px 0"></div>
+</div>
+
+<!-- ══════════ TAB: AVARIAS ══════════ -->
+<div class="tab-panel" id="tab-av">
+  <div class="filter-bar" id="fb-av">
+    <div class="fg"><label>Canal:</label><select id="av-canal"><option value="">Todos</option></select></div>
+    <div class="fg"><label>Transportadora:</label><select id="av-transp"><option value="">Todas</option></select></div>
+    <div class="fg"><label>Tipo:</label><select id="av-tipo"><option value="">Todos</option></select></div>
+    <div class="fg"><label>Status:</label><select id="av-status"><option value="">Todos</option></select></div>
+    <div class="fsep"></div>
+    <button class="dqbtn" id="av-q30" onclick="setQuick('av',30)">30d</button>
+    <button class="dqbtn" id="av-q60" onclick="setQuick('av',60)">60d</button>
+    <button class="dqbtn" id="av-q90" onclick="setQuick('av',90)">90d</button>
+    <div class="fg"><label>De:</label><input type="date" id="av-de"></div>
+    <div class="fg"><label>Até:</label><input type="date" id="av-ate"></div>
+    <button class="btn-clr" onclick="clearFilters('av')">↺ Limpar</button><button class="btn-clr" id="av-drill-clr" onclick="resetDrills('av')" style="display:none;border-color:var(--accent);color:var(--accent)">✕ Drill</button><span id="av-drill-label" style="font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;display:none"></span>
+  </div>
+  <div id="av-content" style="padding:20px 0"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════
+const VEND_EXC = new Set([4,26,30,32]);
+const NAT_EXC  = new Set(['COMPLEMENTO','TRANSFERENCIA PARA - SP E BA']);
+const CANAL2_LBL = {CF:'CF – Cliente Final',EC:'EC – Ecommerce',ML:'ML – Mercado Livre',RV:'RV – Revenda',X:'X – Outros',SAC:'SAC'};
+
+// Canal grouping for Tela de Acompanhamento
+// Rules: Comercial = Comercial|B2B; Ecommerce = Site|Ecommerce; Mercado Livre = Marketplace|Mercado Livre
+function acCanalGroup(v){
+  if(!v) return 'Outros';
+  const l=v.toLowerCase();
+  if(l.includes('mercado')||l.includes('marketplace')||l==='ml') return 'Mercado Livre';
+  if(l.includes('site')||l.includes('ecommerce')||l.includes('e-commerce')||l==='ec') return 'Ecommerce';
+  if(l.includes('comercial')||l.includes('b2b')) return 'Comercial';
+  return 'Outros';
+}
+
+// Limpa nome de transportadora: Title Case + remove sufixos legais/operacionais
+function cleanTransp(name){
+  if(!name) return '';
+  const noise=/\b(LTDA\.?|S\.?A\.?|ME\.?|EIRELI\.?|EPP\.?|LIMITADA|TRANSPORTES?|TRANSPORTADORA|ARMAZENAGEM|URGENTES?|EXPRESSO|CARGAS?)\b/gi;
+  const dash =/\s*[-–]\s*(MG|SP|BA|RJ|PR|RS|SC|GO|MT|MS|DF|CE|PE|AM|PA|IP|CAP|INT)\b.*/gi;
+  let s = name.replace(dash,'').replace(noise,'').replace(/\s+/g,' ').trim();
+  // E isolado no meio (ex "RDMAX E LOGISTICA") → remove
+  s = s.replace(/\bE\b/gi,'').replace(/\s+/g,' ').trim();
+  // Title case
+  return s ? s.toLowerCase().replace(/(?:^|\s)\S/g,c=>c.toUpperCase()) : name;
+}
+
+// Palavras a remover do nome da transportadora
+const TRANSP_REMOVE = new Set(['LTDA','LTDA.','EIRELI','EIRELI.','ME','EPP','S/A','SA','S.A','S.A.',
+  'IP','TRANSPORTES','TRANSPORTADORA','LOGISTICA','LOGÍSTICAS','URGENTES','HOLDING','TRANSPORTE']);
+function cleanTransp(s){
+  if(!s||!s.trim()) return s||'';
+  const parts = s.trim().split(/\s+/);
+  const filtered = parts.filter(p=>!TRANSP_REMOVE.has(p.toUpperCase().replace(/\.$/,'')));
+  // Remove trailing dashes
+  while(filtered.length && filtered[filtered.length-1].replace(/-/g,'').trim()==='') filtered.pop();
+  const result = filtered.join(' ').replace(/\s*-\s*$/,'').trim();
+  // Title case: keep short alpha acronyms (MG, SP, RJ...) uppercase, rest capitalize
+  return result.split(/\s+/).map(w=>{
+    const core=w.replace(/[^a-zA-ZÀ-ú]/g,'');
+    if(core.length<=3 && core===core.toUpperCase() && core.length>0) return w;
+    return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();
+  }).join(' ');
+}
+// Canal de Vendas da Cobertura → canal_2 (fuzzy, baseado em regras)
+function cobCanalToC2(v){
+  if(!v) return 'N/A';
+  const n=v.toLowerCase().replace(/[_\s]/g,'');
+  if(n.includes('mercado')||n.includes('meli')||n==='ml') return 'ML';
+  if(n.includes('site')||n==='ec'||n.includes('ecommerce')||n.includes('e-commerce')) return 'EC';
+  if(n.includes('comercial')||n==='cf'||n.includes('clientefinal')) return 'CF';
+  return 'RV'; // Revenda / demais
+}
+const UF_SIGLA = {
+  'Acre':'AC','Alagoas':'AL','Amapá':'AP','Amapa':'AP','Amazonas':'AM','Bahia':'BA',
+  'Ceará':'CE','Ceara':'CE','Distrito Federal':'DF','Espírito Santo':'ES','Espirito Santo':'ES',
+  'Goiás':'GO','Goias':'GO','Maranhão':'MA','Maranhao':'MA','Mato Grosso do Sul':'MS',
+  'Mato Grosso':'MT','Minas Gerais':'MG','Pará':'PA','Para':'PA','Paraíba':'PB','Paraiba':'PB',
+  'Paraná':'PR','Parana':'PR','Pernambuco':'PE','Piauí':'PI','Piaui':'PI',
+  'Rio de Janeiro':'RJ','Rio Grande do Norte':'RN','Rio Grande do Sul':'RS',
+  'Rondônia':'RO','Rondonia':'RO','Roraima':'RR','Santa Catarina':'SC',
+  'São Paulo':'SP','Sao Paulo':'SP','Sergipe':'SE','Tocantins':'TO',
+};
+const toSigla = v => { const s=(v||'').toString().trim(); return UF_SIGLA[s]||s; };
+const REGIOES = {
+  'São Paulo':['SP'],'Sudeste':['MG','RJ','ES'],'Sul':['PR','RS','SC'],
+  'Centro-Oeste':['GO','MT','MS','DF'],'Nordeste':['BA','CE','MA','PB','PE','PI','RN','SE','AL'],
+  'Norte':['AC','AM','AP','PA','RO','RR','TO'],
+};
+const REGIAO_ORDER = ['São Paulo','Sudeste','Sul','Centro-Oeste','Nordeste','Norte'];
+// Reverse map: sigla → nome da região
+const UF_TO_REGIAO={};
+Object.entries(REGIOES).forEach(([reg,ufs])=>ufs.forEach(uf=>{UF_TO_REGIAO[uf]=reg;}));
+const IS_ONTIME   = new Set(['Entregue no prazo','Em aberto no prazo sem ocorrências','Em aberto no prazo com ocorrências']);
+const IS_ENTREGUE = new Set(['ENTREGUE NO DESTINO','ENTREGUE']);
+const COLORS = ['#f0b429','#3b82f6','#10b981','#8b5cf6','#f97316','#ef4444','#06b6d4','#ec4899','#84cc16','#a78bfa'];
+// Acompanhamento chart colors (stable palette for transportadoras)
+const CHART_COLORS=['#3b82f6','#ef4444','#10b981','#f97316','#8b5cf6','#f0b429','#06b6d4','#ec4899','#84cc16','#a78bfa','#fbbf24','#34d399'];
+const TIP = {backgroundColor:'#1c2230',titleColor:'#e6edf3',bodyColor:'#8b949e',borderColor:'#21262d',borderWidth:1};
+
+// ── Interactive drill-down state (Faturamento tab only) ──
+const DRILL = {
+  // Faturamento
+  uf:null, canal2:null, fat_transp:null,
+  // Entregas
+  ent_transp:null, ent_praca:null,
+  // Avarias
+  av_transp:null, av_status:null, av_tipo:null,
+};
+function setDrill(key, val, tab){
+  DRILL[key] = DRILL[key]===val ? null : val;
+  if(tab==='fat') buildFat();
+  else if(tab==='ent') buildEnt();
+  else if(tab==='av')  buildAv();
+}
+// Reset all drills for a specific tab
+function resetDrills(tab){
+  if(tab==='fat'){DRILL.uf=null;DRILL.canal2=null;DRILL.fat_transp=null;}
+  else if(tab==='ent'){DRILL.ent_transp=null;DRILL.ent_praca=null;}
+  else if(tab==='av'){DRILL.av_transp=null;DRILL.av_status=null;DRILL.av_tipo=null;}
+  if(tab==='fat')buildFat();else if(tab==='ent')buildEnt();else buildAv();
+}
+function drillLabel(key){ return DRILL[key] ? ` [${DRILL[key]}]` : ''; }
+
+// ═══════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════
+const S = { notas:null, cob:null, av:null, charts:{} };
+
+
+// ═══════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════
+const fmtBRL = v => (v==null||isNaN(v)) ? '—' : 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtN   = v => (v==null||isNaN(v)) ? '0' : Number(v).toLocaleString('pt-BR');
+const pctN   = (a,b) => b ? ((a/b)*100).toFixed(1)+'%' : '0%';
+const pctV   = (a,b) => b ? (a/b)*100 : 0;
+
+function fmtAxis(v){
+  const a=Math.abs(v);
+  if(a>=1e6) return (v/1e6).toFixed(a>=10e6?0:1)+' M';
+  if(a>=1e3) return (v/1e3).toFixed(0)+'k';
+  return fmtN(v);
+}
+
+const MESES={janeiro:0,fevereiro:1,marco:2,abril:3,maio:4,junho:5,julho:6,agosto:7,setembro:8,outubro:9,novembro:10,dezembro:11};
+function parseDate(s){
+  if(!s)return null;
+  if(s instanceof Date)return isNaN(s)?null:s;
+  if(typeof s==='number'){const d=new Date(Math.round((s-25569)*86400*1000));return isNaN(d)?null:d;}
+  const m=s.match(/(\d+)\s+de\s+(\w+)\s+de\s+(\d{4})/i);
+  if(m){const k=m[2].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(MESES[k]!==undefined)return new Date(+m[3],MESES[k],+m[1]);}
+  const m2=s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if(m2)return new Date(+m2[3],+m2[2]-1,+m2[1]);
+  const d=new Date(s);return isNaN(d)?null:d;
+}
+const toMK = d => { if(!d||isNaN(d))return null; return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); };
+const mkLbl= k => { if(!k)return''; const[y,m]=k.split('-'); return new Date(+y,+m-1,1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}); };
+function inRange(d,de,ate){
+  if(!de&&!ate)return true;
+  if(!d)return false;
+  if(de&&d<new Date(de+'T00:00:00'))return false;
+  if(ate&&d>new Date(ate+'T23:59:59'))return false;
+  return true;
+}
+function inUFRegs(uf,fuf,freg){
+  if(fuf&&uf!==fuf)return false;
+  if(freg){const us=REGIOES[freg];if(us&&!us.includes(uf))return false;}
+  return true;
+}
+
+// ═══════════════════════════════════════════════════
+//  INDEXEDDB
+// ═══════════════════════════════════════════════════
+const DB_NAME='dashOp_v8', DB_STORE='blobs';
+let _db=null, _stMode='unknown';
+async function getDB(){
+  if(_db)return _db;
+  return new Promise((res,rej)=>{
+    try{
+      const req=indexedDB.open(DB_NAME,1);
+      req.onupgradeneeded=e=>{try{e.target.result.createObjectStore(DB_STORE);}catch(x){}};
+      req.onsuccess=e=>{_db=e.target.result;_stMode='indexeddb';res(_db);};
+      req.onerror=e=>rej(e.target.error);
+      setTimeout(()=>rej(new Error('IDB timeout')),4000);
+    }catch(x){rej(x);}
+  });
+}
+async function dbSet(key,val){
+  try{
+    const db=await getDB();
+    await new Promise((res,rej)=>{const tx=db.transaction(DB_STORE,'readwrite');tx.objectStore(DB_STORE).put(val,key);tx.oncomplete=()=>res();tx.onerror=e=>rej(e.target.error);});
+  }catch(e){
+    _stMode='session';
+    try{sessionStorage.setItem('d_'+key,JSON.stringify(val));}catch(x){_stMode='memory';}
+    setDbg('dv-st',_stMode,'warn');
+  }
+}
+async function dbGet(key){
+  try{const db=await getDB();return new Promise((res,rej)=>{const req=db.transaction(DB_STORE,'readonly').objectStore(DB_STORE).get(key);req.onsuccess=e=>res(e.target.result??null);req.onerror=e=>rej(e.target.error);});}
+  catch(e){try{const s=sessionStorage.getItem('d_'+key);return s?JSON.parse(s):null;}catch(x){return null;}}
+}
+
+// ═══════════════════════════════════════════════════
+//  NORMALISATION
+// ═══════════════════════════════════════════════════
+function normStr(s){return s?s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,''):''}
+function rGet(row,...keys){
+  for(const k of keys){if(row[k]!=null)return row[k];}
+  for(const k of keys){const nk=normStr(k);const fk=Object.keys(row).find(rk=>normStr(rk)===nk);if(fk&&row[fk]!=null)return row[fk];}
+  return null;
+}
+
+function normNotas(rows){
+  const out=[];
+  for(const r of rows){
+    const cv=Number(rGet(r,'cod_vendedor','Cod Vendedor')||0);
+    if(VEND_EXC.has(cv)) continue;
+    const nat=(rGet(r,'natureza_operacao','Natureza Operacao','Natureza de Operação')||'').toString().trim();
+    if(NAT_EXC.has(nat.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''))) continue;
+    out.push({
+      num_fiscal:  Number(rGet(r,'NumFiscal','numfiscal')||0),
+      numero_nota: Number(rGet(r,'numero_nota','Numero Nota')||0),
+      data_emissao:parseDate(rGet(r,'data_emissao','Data Emissão','Data Emissao')||''),
+      natureza:    nat,
+      produto:     (rGet(r,'nome_produto','Nome Produto','Produto')||'').toString().trim(),
+      valor_nota:  parseFloat(rGet(r,'valor_nota_fiscal','Valor Nota Fiscal')||0),
+      preco_total: parseFloat(rGet(r,'preco_total_item','Preco Total Item')||0),
+      cod_vendedor:cv,
+      vendedor:    (rGet(r,'vendedor','Vendedor')||'').toString().trim(),
+      uf_destino:  toSigla((rGet(r,'uf_destino','UF Destino','UF')||'').toString().trim()),
+      canal2:      (rGet(r,'canal_2','canal2','Canal 2')||'').toString().trim(),
+      quantidade:  parseFloat(rGet(r,'quantidade','Quantidade')||0),
+      tipmov:      (rGet(r,'tipmov','Tipo Mov')||'').toString().trim(),
+      devolucao:   Number(rGet(r,'devolucao','Devolução')||1),
+    });
+  }
+  return out;
+}
+
+function normCob(rows){
+  return rows.map(r=>{
+    let dc=rGet(r,'Data Criação','Data Criacao','data_criacao');
+    if(dc&&typeof dc==='number') dc=new Date(Math.round((dc-25569)*86400*1000));
+    else if(dc&&!(dc instanceof Date)) dc=parseDate(dc.toString());
+    if(dc&&isNaN(dc)) dc=null;
+    return{
+      nota_fiscal:  Number(rGet(r,'Nota Fiscal','nota_fiscal')||0),
+      data_criacao: dc,
+      uf:           toSigla((rGet(r,'UF','uf')||'').toString().trim()),
+      transportadora:cleanTransp((rGet(r,'Transportadora','transportadora')||'').toString().trim()),
+      canal2:       cobCanalToC2((rGet(r,'Canal de Vendas','canal_de_vendas','Canal','canal')||'').toString().trim()),
+      microstatus:  (rGet(r,'MicroStatus','Microstatus')||'').toString().trim(),
+      situacao:     (rGet(r,'Situação','Situacao')||'').toString().trim(),
+      performance:  (rGet(r,'Performance','performance')||'').toString().trim(),
+      praca:        (rGet(r,'Praça','Praca')||'').toString().trim(),
+      valor_nota:   parseFloat(rGet(r,'Valor da Nota','valor_da_nota')||0),
+      existem_oc:   (rGet(r,'Existem ocorrências','Existem ocorrencias')||'').toString().toLowerCase()==='sim',
+      destinatario: (rGet(r,'Nome do Destinatário','Nome Destinatario')||'').toString().trim(),
+      cidade:       (rGet(r,'Cidade do Destinatário','Cidade do Destinatario','cidade')||'').toString().trim(),
+      prev_entrega: (()=>{ let v=rGet(r,'Previsão Entrega Cliente','Previsao Entrega Cliente','Previsão Entrega','prev_entrega'); if(!v)return null; if(v instanceof Date)return isNaN(v)?null:v; if(typeof v==='number')return new Date(Math.round((v-25569)*86400*1000)); return parseDate(v.toString()); })(),
+      data_entrega: (()=>{ let v=rGet(r,'Data Entrega','data_entrega'); if(!v)return null; if(v instanceof Date)return isNaN(v)?null:v; if(typeof v==='number')return new Date(Math.round((v-25569)*86400*1000)); return parseDate(v.toString()); })(),
+    };
+  });
+}
+
+function normAv(rows){
+  return rows.map(r=>{
+    const nf=(rGet(r,'NF','nf')||'').toString().replace(/\./g,'').replace(',','.').trim();
+    const vl=(rGet(r,' Valor ','Valor','valor')||'').toString().replace('R$','').replace(/\s/g,'').replace(/\./g,'').replace(',','.').trim();
+    return{
+      ticket:   (rGet(r,'Ticket')||'').toString().trim(),
+      nf:       Number(nf)||0,
+      emissao:  parseDate((rGet(r,'Emissão','Emissao','emissao')||'').toString()),
+      ocorrencia:(rGet(r,'Ocorrência','Ocorrencia')||'').toString().trim(),
+      produto:  (rGet(r,' Produto ','Produto')||'').toString().trim(),
+      valor:    parseFloat(vl)||0,
+      status:   (rGet(r,'Status')||'').toString().trim(),
+      em_aberto:(rGet(r,'Em Aberto ou Finalizado?')||'').toString().trim(),
+      parceiro: (rGet(r,'Parceiro')||'').toString().trim(),
+      quantidade:parseFloat(rGet(r,'Quantidade')||0)||0,
+    };
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  PERSISTENCE
+// ═══════════════════════════════════════════════════
+function serRows(rows){
+  return(rows||[]).map(r=>{const o={...r};['data_emissao','data_criacao','emissao','prev_entrega','data_entrega'].forEach(f=>{if(o[f] instanceof Date)o[f]=o[f].toISOString();});return o;});
+}
+const deserN = rows=>rows.map(r=>({...r,data_emissao:r.data_emissao?new Date(r.data_emissao):null}));
+const deserC = rows=>rows.map(r=>({...r,
+  data_criacao:  r.data_criacao  ? new Date(r.data_criacao)  : null,
+  prev_entrega:  r.prev_entrega  ? new Date(r.prev_entrega)  : null,
+  data_entrega:  r.data_entrega  ? new Date(r.data_entrega)  : null,
+}));
+const deserA = rows=>rows.map(r=>({...r,emissao:r.emissao?new Date(r.emissao):null}));
+
+async function saveAll(meta){
+  if(S.notas)     await dbSet('notas',    serRows(S.notas));
+  if(S.cob)       await dbSet('cob',      serRows(S.cob));
+  if(S.av)        await dbSet('av',       serRows(S.av));
+  await dbSet('meta', meta);
+}
+async function loadSaved(){
+  const meta=await dbGet('meta'); if(!meta)return false;
+  const rn=await dbGet('notas'),rc=await dbGet('cob'),ra=await dbGet('av');
+  if(rn)S.notas=deserN(rn);
+  if(rc){
+    S.cob=deserC(rc);
+    // Migration check: if cob rows lack 'cidade' field (saved before v8), mark as stale
+    if(S.cob.length>0 && S.cob[0].cidade===undefined){
+      S.cob=null; // force reimport
+      console.warn('[loadSaved] Cobertura data is stale (missing cidade) — requires reimport');
+    }
+  }
+  if(ra)S.av=deserA(ra);
+  if(meta.lu)document.getElementById('last-upd').textContent='Atualizado: '+meta.lu;
+  return!!(S.notas||S.cob||S.av);
+}
+
+// ═══════════════════════════════════════════════════
+//  FILE READ
+// ═══════════════════════════════════════════════════
+function repairRef(ws){
+  if(ws['!ref'])return ws;
+  const re=/^[A-Z]{1,3}\d+$/,keys=Object.keys(ws).filter(k=>re.test(k));
+  if(!keys.length)return ws;
+  let minC=Infinity,maxC=0,minR=Infinity,maxR=0;
+  keys.forEach(k=>{const a=XLSX.utils.decode_cell(k);minC=Math.min(minC,a.c);maxC=Math.max(maxC,a.c);minR=Math.min(minR,a.r);maxR=Math.max(maxR,a.r);});
+  ws['!ref']=XLSX.utils.encode_range({s:{r:minR,c:minC},e:{r:maxR,c:maxC}});
+  return ws;
+}
+function bestSheet(wb){
+  for(const name of wb.SheetNames){
+    const ws=repairRef(wb.Sheets[name]);
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:false});
+    for(let r=0;r<Math.min(5,rows.length);r++){
+      if((rows[r]||[]).some(h=>normStr(String(h||'')).includes('notafiscal')||normStr(String(h||'')).includes('nota')))
+        return{ws,hr:r,name};
+    }
+  }
+  return{ws:repairRef(wb.Sheets[wb.SheetNames[0]]),hr:0,name:wb.SheetNames[0]};
+}
+function readXLSX(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      try{
+        const wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
+        const{ws,hr,name}=bestSheet(wb);
+        console.log('[readXLSX]',file.name,'→ sheet:',name,'headerRow:',hr);
+        let rows;
+        if(hr===0){rows=XLSX.utils.sheet_to_json(ws,{defval:null});}
+        else{
+          const arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:false});
+          const hdrs=arr[hr];
+          rows=arr.slice(hr+1).map(row=>{const o={};hdrs.forEach((h,i)=>{if(h!=null)o[String(h)]=row[i]??null;});return o;})
+            .filter(r=>Object.values(r).some(v=>v!=null));
+        }
+        console.log('[readXLSX]',file.name,'→',rows.length,'rows, cols:',rows[0]?Object.keys(rows[0]).slice(0,6):[]);
+        res(rows);
+      }catch(err){rej(err);}
+    };
+    r.onerror=rej;r.readAsBinaryString(file);
+  });
+}
+function readCSV(file){return new Promise((res,rej)=>Papa.parse(file,{header:true,skipEmptyLines:true,complete:r=>res(r.data),error:rej}));}
+
+// ═══════════════════════════════════════════════════
+//  UPLOAD HANDLERS
+// ═══════════════════════════════════════════════════
+const pending={n:null,c:null,a:null};
+function setupUp(fid,lid,uid,key){
+  const inp=document.getElementById(fid),lbl=document.getElementById(lid),st=document.getElementById(uid);
+  inp.addEventListener('change',e=>{
+    const f=e.target.files[0];if(!f)return;
+    pending[key]=f;lbl.classList.add('loaded');
+    st.textContent=f.name.length>16?f.name.substring(0,14)+'…':f.name;
+    document.getElementById('btn-apply').disabled=false;
+  });
+}
+setupUp('f-notas','lbl-n','us-n','n');
+setupUp('f-cob','lbl-c','us-c','c');
+setupUp('f-av','lbl-a','us-a','a');
+
+document.getElementById('btn-apply').addEventListener('click',async()=>{
+  const btn=document.getElementById('btn-apply');
+  btn.textContent='Processando…';btn.disabled=true;
+  try{
+    if(pending.n) S.notas=normNotas(await readXLSX(pending.n));
+    if(pending.c){const ext=pending.c.name.split('.').pop().toLowerCase();S.cob=normCob(ext==='csv'?await readCSV(pending.c):await readXLSX(pending.c));}
+    if(pending.a){const ext=pending.a.name.split('.').pop().toLowerCase();S.av=normAv(ext==='csv'?await readCSV(pending.a):await readXLSX(pending.a));}
+    const meta={lu:new Date().toLocaleString('pt-BR')};
+    await saveAll(meta);
+    document.getElementById('last-upd').textContent='Atualizado: '+meta.lu;
+    document.getElementById('up-info').textContent='✅ Dados salvos';
+    updateDbg(); buildActive();
+  }catch(err){document.getElementById('up-info').textContent='❌ Erro: '+err.message;console.error(err);}
+  btn.textContent='Aplicar Dados';btn.disabled=false;
+});
+
+// ═══════════════════════════════════════════════════
+//  DEBUG
+// ═══════════════════════════════════════════════════
+function setDbg(id,txt,cls){
+  const el=document.getElementById(id);if(el)el.textContent=txt;
+  const parent=el?.closest('.di');
+  if(parent){const d=parent.querySelector('.dd');if(d){d.className='dd '+(cls||'');}}
+}
+function updateDbg(){
+  const{notas:n,cob:c,av:a}=S;
+  if(n&&n.length)setDbg('dv-n',n.length.toLocaleString('pt-BR')+' linhas','ok');
+  else if(n)setDbg('dv-n','0 linhas','err'); else setDbg('dv-n','—','');
+  if(c&&c.length)setDbg('dv-c',c.length.toLocaleString('pt-BR')+' linhas','ok');
+  else if(c)setDbg('dv-c','0 linhas — ressalve como .xlsx ou use .csv','err'); else setDbg('dv-c','—','');
+  if(a&&a.length)setDbg('dv-a',a.length.toLocaleString('pt-BR')+' linhas','ok');
+  else if(a)setDbg('dv-a','0 linhas','err'); else setDbg('dv-a','—','');
+  setDbg('dv-st',_stMode||'—','ok');
+  document.getElementById('dd-n').className='dd '+(n&&n.length?'ok':n?'err':'');
+  document.getElementById('dd-c').className='dd '+(c&&c.length?'ok':c?'err':'');
+  document.getElementById('dd-a').className='dd '+(a&&a.length?'ok':a?'err':'');
+}
+
+// ═══════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════
+let activeTab='fat';
+function switchTab(tab){
+  activeTab=tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+tab));
+  buildActive();
+}
+// Table search filter
+function filterTable(inputId){
+  const q=(document.getElementById(inputId)?.value||'').toLowerCase().trim();
+  const tbody=document.getElementById('tbl-'+inputId);
+  if(!tbody)return;
+  tbody.querySelectorAll('tr[data-search]').forEach(tr=>{
+    tr.style.display=(!q||tr.dataset.search.includes(q))?'':'none';
+  });
+}
+
+// Track which quick-filter is active per tab
+const QUICK_ACTIVE={fat:60, ent:60, av:60};
+
+function setQuick(tab, days){
+  QUICK_ACTIVE[tab]=days;
+  const today=new Date();
+  const from=new Date(today); from.setDate(today.getDate()-days);
+  const toISO=d=>d.toISOString().substring(0,10);
+  document.getElementById(tab+'-de').value=toISO(from);
+  document.getElementById(tab+'-ate').value=toISO(today);
+  updateQuickBtns(tab);
+  buildActive();
+}
+
+function updateQuickBtns(tab){
+  [30,60,90].forEach(d=>{
+    const btn=document.getElementById(tab+'-q'+d);
+    if(btn) btn.classList.toggle('active', QUICK_ACTIVE[tab]===d);
+  });
+  // Deactivate quick buttons when manual date is typed
+  ['de','ate'].forEach(f=>{
+    const inp=document.getElementById(tab+'-'+f);
+    if(inp) inp.addEventListener('input',()=>{
+      QUICK_ACTIVE[tab]=null;
+      [30,60,90].forEach(d=>{const b=document.getElementById(tab+'-q'+d);if(b)b.classList.remove('active');});
+    },{once:true});
+  });
+}
+
+function initQuick(tab){
+  // Apply 60d default on first load if no manual date set
+  if(!document.getElementById(tab+'-de').value){
+    setQuick(tab,60);
+  } else {
+    updateQuickBtns(tab);
+  }
+}
+
+function buildActive(){
+  if(activeTab==='fat'){initQuick('fat');buildFat();}
+  else if(activeTab==='ent'){initQuick('ent');buildEnt();}
+  else if(activeTab==='av'){initQuick('av');buildAv();}
+}
+
+// ═══════════════════════════════════════════════════
+//  FILTER HELPERS
+// ═══════════════════════════════════════════════════
+function gv(id){return document.getElementById(id)?.value||'';}
+function fillSel(id,opts,all){
+  const sel=document.getElementById(id);if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML=`<option value="">${all}</option>`;
+  opts.forEach(o=>{
+    const op=document.createElement('option');
+    if(o&&typeof o==='object'){op.value=o.v;op.textContent=o.l;if(o.v===cur)op.selected=true;}
+    else{op.value=o;op.textContent=o;if(o===cur)op.selected=true;}
+    sel.appendChild(op);
+  });
+}
+function clearFilters(tab){
+  const ids={
+    fat:['fat-canal','fat-transp','fat-uf','fat-regiao','fat-de','fat-ate'],
+    ent:['ent-canal','ent-transp','ent-uf','ent-regiao','ent-praca','ent-de','ent-ate'],
+    av: ['av-canal','av-transp','av-tipo','av-status','av-de','av-ate'],
+  };
+  // Reset quick-button selection and re-apply 60d
+  QUICK_ACTIVE[tab]=null;
+  (ids[tab]||[]).forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  if(tab==='fat'){DRILL.uf=null;DRILL.canal2=null;DRILL.fat_transp=null;}
+  buildActive();
+}
+// Attach change listeners
+['fat-canal','fat-transp','fat-uf','fat-regiao','fat-de','fat-ate'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change',()=>{if(activeTab==='fat'){DRILL.uf=null;DRILL.canal2=null;buildFat();}});
+});
+['ent-canal','ent-transp','ent-uf','ent-regiao','ent-praca','ent-de','ent-ate'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change',()=>{if(activeTab==='ent')buildEnt();});
+});
+['av-canal','av-transp','av-tipo','av-status','av-de','av-ate'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change',()=>{if(activeTab==='av')buildAv();});
+});
+
+// ═══════════════════════════════════════════════════
+//  CHART HELPERS
+// ═══════════════════════════════════════════════════
+function dChart(id){if(S.charts[id]){S.charts[id].destroy();delete S.charts[id];}}
+
+function mkBarV(id,labels,datasets,opts={}){
+  dChart(id);const ctx=document.getElementById(id);if(!ctx)return;
+  S.charts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:datasets.length>1,labels:{color:'#8b949e',font:{size:11}}},tooltip:TIP},
+    onClick: opts.onClickDrill ? (_,els)=>{ if(els.length) opts.onClickDrill(labels[els[0].index]); } : undefined,
+    scales:{
+      x:{ticks:{color:'#6e7681',font:{size:10},maxRotation:45,autoSkip:true},grid:{color:'#21262d'},
+         ...(opts.onClickDrill?{cursor:'pointer'}:{})},
+      y:{ticks:{color:'#6e7681',font:{size:10},callback:v=>opts.curr?fmtAxis(v):fmtN(v)},grid:{color:'#21262d'},
+        ...(opts.y2?{}:{})},
+      ...(opts.y2?{y2:{type:'linear',position:'right',min:0,max:100,ticks:{color:'#f0b429',font:{size:10},callback:v=>v+'%'},grid:{drawOnChartArea:false}}}:{})
+    }
+  }});
+}
+function mkBarH(id,labels,datasets,opts={}){
+  dChart(id);const ctx=document.getElementById(id);if(!ctx)return;
+  S.charts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{
+    responsive:true,maintainAspectRatio:false,indexAxis:'y',
+    plugins:{legend:{display:false},tooltip:TIP},
+    scales:{
+      x:{ticks:{color:'#6e7681',font:{size:10},callback:v=>opts.curr?fmtAxis(v):fmtN(v)},grid:{color:'#21262d'}},
+      y:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}}
+    }
+  }});
+}
+function mkDonut(id,labels,data,opts={}){
+  dChart(id);const ctx=document.getElementById(id);if(!ctx)return;
+  S.charts[id]=new Chart(ctx,{type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:COLORS.slice(0,data.length),borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      onClick: opts.onClickDrill ? (_,els)=>{ if(els.length) opts.onClickDrill(labels[els[0].index]); } : undefined,
+      plugins:{legend:{position:'right',labels:{color:'#8b949e',font:{size:11},boxWidth:11,padding:9}},tooltip:TIP}}});
+}
+function mkLine(id,labels,datasets){
+  dChart(id);const ctx=document.getElementById(id);if(!ctx)return;
+  S.charts[id]=new Chart(ctx,{type:'line',data:{labels,datasets},options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:TIP},
+    scales:{x:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}},y:{ticks:{color:'#6e7681',font:{size:10},callback:v=>fmtAxis(v)},grid:{color:'#21262d'}}}
+  }});
+}
+function mkOtif(id,labels,totals,ontime,pcts){
+  dChart(id);const ctx=document.getElementById(id);if(!ctx)return;
+  S.charts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets:[
+    {label:'Total de Notas',data:totals,backgroundColor:'rgba(59,130,246,.55)',borderColor:'#3b82f6',borderWidth:1,yAxisID:'y'},
+    {label:'Notas no Prazo', data:ontime,backgroundColor:'rgba(16,185,129,.55)',borderColor:'#10b981',borderWidth:1,yAxisID:'y'},
+    {label:'% On Time',     data:pcts,  type:'line',borderColor:'#f0b429',backgroundColor:'transparent',borderWidth:2,pointRadius:4,pointBackgroundColor:'#f0b429',tension:.3,yAxisID:'y2'},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{label:c=>{if(c.dataset.label==='% On Time')return ' % On Time: '+c.raw.toFixed(1)+'%';return ' '+c.dataset.label+': '+fmtN(c.raw);}}}},
+    scales:{
+      x:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}},
+      y:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'},title:{display:true,text:'Qtd Notas',color:'#6e7681',font:{size:10}}},
+      y2:{type:'linear',position:'right',min:0,max:100,ticks:{color:'#f0b429',font:{size:10},callback:v=>v+'%'},grid:{drawOnChartArea:false},title:{display:true,text:'% On Time',color:'#f0b429',font:{size:10}}}
+    }
+  }});
+}
+function mkAvRatio(id,labels,totals,avarias,pcts){
+  dChart(id);const ctx=document.getElementById(id);if(!ctx)return;
+  S.charts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets:[
+    {label:'NFs c/ painel transportadas',data:totals,  backgroundColor:'rgba(59,130,246,.45)',borderColor:'#3b82f6',borderWidth:1,yAxisID:'y'},
+    {label:'NFs c/ Avaria de painel',    data:avarias, backgroundColor:'rgba(239,68,68,.55)', borderColor:'#ef4444',borderWidth:1,yAxisID:'y'},
+    {label:'% Avaria',data:pcts,type:'line',borderColor:'#f0b429',backgroundColor:'transparent',borderWidth:2,pointRadius:4,pointBackgroundColor:'#f0b429',tension:.3,yAxisID:'y2'},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{label:c=>{if(c.dataset.label==='% Avaria')return ' % Avaria: '+c.raw.toFixed(2)+'%';return ' '+c.dataset.label+': '+fmtN(c.raw);}}}},
+    scales:{
+      x:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}},
+      y:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'},title:{display:true,text:'Qtd NFs',color:'#6e7681',font:{size:10}}},
+      y2:{type:'linear',position:'right',min:0,ticks:{color:'#f0b429',font:{size:10},callback:v=>v+'%'},grid:{drawOnChartArea:false},title:{display:true,text:'% Avaria',color:'#f0b429',font:{size:10}}}
+    }
+  }});
+}
+
+// ═══════════════════════════════════════════════════
+//  DOM HELPERS
+// ═══════════════════════════════════════════════════
+function kRow(items){
+  return `<div class="kpi-row">${items.map(i=>`<div class="kpi" style="--kc:${i.c}"><div class="kpi-lbl">${i.l}</div><div class="kpi-val">${i.v}</div><div class="kpi-sub">${i.s}</div></div>`).join('')}</div>`;
+}
+function card(title,sub,body,mb=true){
+  return `<div class="card${mb?'':' no-mb'}"><div class="ch"><span class="ct">${title}</span><span class="cs">${sub}</span></div>${body}</div>`;
+}
+function chCard(title,sub,cid,h,leg=''){
+  return card(title,sub,`${leg}<div class="cwrap" style="height:${h}px"><canvas id="${cid}"></canvas></div>`);
+}
+function pctBar(p,col){
+  return `<div class="pct-cell"><div class="pb-wrap"><div class="pb-fill" style="width:${Math.min(p,100).toFixed(1)}%;background:${col}"></div></div><span class="pv" style="color:${col}">${p.toFixed(1)}%</span></div>`;
+}
+function gCount(rows,kFn){const m={};rows.forEach(r=>{const k=kFn(r)||'N/A';m[k]=(m[k]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
+function gSum(rows,kFn,vFn){const m={};rows.forEach(r=>{const k=kFn(r)||'N/A';m[k]=(m[k]||0)+vFn(r);});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
+function dedup(rows){const m=new Map();rows.forEach(r=>{const k=`${r.num_fiscal}|${r.numero_nota}|${r.data_emissao?r.data_emissao.toISOString().substring(0,10):''}`;if(!m.has(k))m.set(k,r);});return[...m.values()];}
+
+const OTIF_LEG=`<div class="combo-leg"><span class="cli"><span class="cl-dot" style="background:rgba(59,130,246,.6)"></span>Total</span><span class="cli"><span class="cl-dot" style="background:rgba(16,185,129,.6)"></span>No Prazo</span><span class="cli"><span class="cl-line" style="background:#f0b429"></span>% On Time</span></div>`;
+const AV_LEG  =`<div class="combo-leg"><span class="cli"><span class="cl-dot" style="background:rgba(59,130,246,.5)"></span>NFs c/ painel (Cobertura)</span><span class="cli"><span class="cl-dot" style="background:rgba(239,68,68,.6)"></span>NFs c/ Avaria</span><span class="cli"><span class="cl-line" style="background:#f0b429"></span>% Avaria</span></div>`;
+
+// ═══════════════════════════════════════════════════
+//  TAB: FATURAMENTO  (Base_Notas only)
+// ═══════════════════════════════════════════════════
+function buildFat(){
+  const el=document.getElementById('fat-content');
+  if(!S.notas){el.innerHTML='<p style="color:var(--text3);padding:40px 0">Carregue a Base_Notas para visualizar.</p>';return;}
+
+  // Populate filters
+  const canais2=new Set(),ufs=new Set(),fatTransps=new Set();
+  S.notas.forEach(r=>{if(r.canal2)canais2.add(r.canal2);if(r.uf_destino)ufs.add(r.uf_destino);});
+  if(S.cob) S.cob.forEach(r=>{if(r.transportadora)fatTransps.add(r.transportadora);});
+  const c2ord=['ML','EC','CF','RV','X','SAC'];
+  const c2sorted=[...canais2].sort((a,b)=>(c2ord.indexOf(a)<0?99:c2ord.indexOf(a))-(c2ord.indexOf(b)<0?99:c2ord.indexOf(b)));
+  fillSel('fat-canal',c2sorted.map(c=>({v:c,l:CANAL2_LBL[c]||c})),'Todos');
+  fillSel('fat-transp',[...fatTransps].sort(),'Todas');
+  fillSel('fat-uf',[...ufs].filter(u=>u&&u.length<=2).sort(),'Todas');
+  fillSel('fat-regiao',REGIAO_ORDER.map(r=>({v:r,l:r})),'Todas');
+
+  // Get filter values
+  const fc=gv('fat-canal'),ftr=gv('fat-transp'),fu=gv('fat-uf'),fr=gv('fat-regiao'),fde=gv('fat-de'),fate=gv('fat-ate');
+
+  // If transportadora filter active: first restrict to NFs in cob with that transportadora
+  let transpNFSet=null;
+  if(ftr && S.cob){
+    const fde2=gv('fat-de'),fate2=gv('fat-ate');
+    transpNFSet=new Set(
+      S.cob.filter(r=>r.transportadora===ftr&&((!fde2&&!fate2)||inRange(r.data_criacao,fde2,fate2)))
+           .map(r=>r.nota_fiscal).filter(n=>n>0)
+    );
+  }
+
+  // Apply filters + drill-down state
+  // fat_transp drill: build NF set from cob for that transportadora
+  const fatDrillTranspSet = DRILL.fat_transp && S.cob
+    ? new Set(S.cob.filter(r=>r.transportadora===DRILL.fat_transp).map(r=>r.nota_fiscal).filter(n=>n>0))
+    : null;
+
+  const notas=S.notas.filter(r=>{
+    if(fc&&r.canal2!==fc)return false;
+    if(!inUFRegs(r.uf_destino,fu,fr))return false;
+    if(!inRange(r.data_emissao,fde,fate))return false;
+    if(transpNFSet&&!transpNFSet.has(r.num_fiscal))return false;
+    if(fatDrillTranspSet&&!fatDrillTranspSet.has(r.num_fiscal))return false;
+    // Interactive drill filters
+    if(DRILL.uf&&r.uf_destino!==DRILL.uf)return false;
+    if(DRILL.canal2){
+      // canal2 drill: the donut shows "CF – Cliente Final" labels, need to match back
+      const c2lbl=CANAL2_LBL[r.canal2]||r.canal2;
+      if(c2lbl!==DRILL.canal2&&r.canal2!==DRILL.canal2)return false;
+    }
+    return true;
+  });
+  const notasU=dedup(notas);
+  const notasV=notasU.filter(r=>r.tipmov==='V'&&r.devolucao===1);
+  const fatB=notasV.reduce((s,r)=>s+r.valor_nota,0);
+  const tkM=notasV.length?fatB/notasV.length:0;
+
+  document.getElementById('ti-fat').textContent=fmtN(notasV.length)+' NFs'+(DRILL.uf?` · ${DRILL.uf}`:'')+(DRILL.canal2?` · ${DRILL.canal2}`:'');
+
+  // Build HTML
+  let html='';
+  html+=kRow([
+    {l:'Faturamento Bruto', v:fmtBRL(fatB), s:`${fmtN(notasV.length)} NFs de venda`,    c:'var(--accent)'},
+    {l:'Ticket Médio',      v:fmtBRL(tkM),  s:'Por nota fiscal',                         c:'var(--accent2)'},
+  ]);
+  html+=`<div class="g21">${chCard('Evolução Mensal do Faturamento','','ch-fat-evol',200)}${chCard('Faturamento por Canal (canal_2)','','ch-fat-canal',200)}</div>`;
+  html+=`<div class="g2">${chCard('Top 10 UF Destino','Por faturamento','ch-fat-uf',200)}${chCard('NFs por Transportadora','Da Cobertura','ch-fat-transp',200)}</div>`;
+
+  // Top Produtos + Top Vendedores side by side
+  const topV=gSum(notasV,r=>r.vendedor,r=>r.valor_nota).slice(0,10);
+  const byP=gSum(notas,r=>r.produto,r=>r.preco_total).slice(0,10);
+  html+=`<div class="g2">`;
+  html+=card('Top 10 Produtos','Por faturamento',`<div class="tw"><table>
+    <thead><tr><th>Produto</th><th class="tr">Faturamento</th><th class="tr">Ticket Médio</th></tr></thead>
+    <tbody>${byP.map(([p,fat])=>{
+      const nfsP=dedup(notas.filter(r=>r.produto===p));
+      return`<tr><td style="font-size:11px;white-space:normal;word-break:break-word;max-width:340px">${p}</td><td class="mono tr" style="white-space:nowrap">${fmtBRL(fat)}</td><td class="mono tr" style="white-space:nowrap">${fmtBRL(nfsP.length?fat/nfsP.length:0)}</td></tr>`;
+    }).join('')}</tbody></table></div>`);
+  html+=card('Top Vendedores',`${fmtN(notasV.length)} NFs`,`<div class="tw"><table>
+    <thead><tr><th>Vendedor</th><th class="tr">Faturamento</th><th class="tr">Ticket Médio</th></tr></thead>
+    <tbody>${topV.map(([v,fat])=>{const nfs=notasV.filter(r=>r.vendedor===v);return`<tr><td>${v}</td><td class="mono tr">${fmtBRL(fat)}</td><td class="mono tr">${fmtBRL(nfs.length?fat/nfs.length:0)}</td></tr>`;}).join('')}</tbody></table></div>`);
+  html+=`</div>`;
+  el.innerHTML=html;
+
+  // Charts
+  requestAnimationFrame(()=>{
+    // Click-drill state (for interactive chart highlighting + filtering)
+    const clickUF=DRILL.uf, clickC2=DRILL.canal2;
+    // Update drill indicator label
+    const clickLabel=document.getElementById('fat-click-label');
+    if(clickLabel){
+      const parts=[];
+      if(clickUF)parts.push('UF: '+clickUF);
+      if(clickC2)parts.push('Canal: '+(CANAL2_LBL[clickC2]||clickC2));
+      if(DRILL.fat_transp)parts.push('Transp: '+DRILL.fat_transp);
+      if(parts.length){clickLabel.textContent='● '+parts.join(' · ');clickLabel.style.display='inline';}
+      else clickLabel.style.display='none';
+    }
+    // Evolução mensal
+    const byM={};notasV.forEach(r=>{if(!r.data_emissao)return;const k=toMK(r.data_emissao);byM[k]=(byM[k]||0)+r.valor_nota;});
+    const mk=Object.keys(byM).sort();
+    mkLine('ch-fat-evol',mk.map(mkLbl),[{label:'Fat',data:mk.map(k=>byM[k]),borderColor:'#f0b429',backgroundColor:'rgba(240,180,41,.12)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#f0b429'}]);
+    // Canal2 donut — clickable to cross-filter
+    const c2Keys=gSum(notasV,r=>r.canal2||'N/A',r=>r.valor_nota); // raw keys for filtering
+    const byC=c2Keys.map(([k,v])=>[CANAL2_LBL[k]||k,v,k]);
+    dChart('ch-fat-canal');
+    const ctxC=document.getElementById('ch-fat-canal');
+    if(ctxC){
+      S.charts['ch-fat-canal']=new Chart(ctxC,{type:'doughnut',
+        data:{labels:byC.map(x=>x[0]),datasets:[{data:byC.map(x=>x[1]),backgroundColor:COLORS.slice(0,byC.length),borderWidth:0,hoverOffset:4}]},
+        options:{responsive:true,maintainAspectRatio:false,
+          onClick:(_,els)=>{if(els[0])setDrill('canal2',c2Keys[els[0].index][0],'fat');},
+          plugins:{legend:{position:'right',labels:{color:'#8b949e',font:{size:11},boxWidth:11,padding:9}},
+                   tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}}}});
+    }
+    // UF — clickable to cross-filter
+    const byUF=gSum(notasV,r=>r.uf_destino,r=>r.valor_nota).slice(0,10);
+    const ufColors=byUF.map(([u])=>clickUF?(u===clickUF?'#f0b429':'#f0b42933'):'#f0b42999');
+    const ufBorder=byUF.map(([u])=>clickUF?(u===clickUF?'#f0b429':'#f0b42955'):'#f0b429');
+    dChart('ch-fat-uf');
+    const ctxUF=document.getElementById('ch-fat-uf');
+    if(ctxUF){
+      S.charts['ch-fat-uf']=new Chart(ctxUF,{type:'bar',
+        data:{labels:byUF.map(x=>x[0]),datasets:[{label:'Fat',data:byUF.map(x=>x[1]),backgroundColor:ufColors,borderColor:ufBorder,borderWidth:1}]},
+        options:{responsive:true,maintainAspectRatio:false,
+          onClick:(_,els)=>{if(els[0])setDrill('uf',byUF[els[0].index][0],'fat');},
+          plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}},
+          scales:{x:{ticks:{color:'#6e7681',font:{size:10},maxRotation:45},grid:{color:'#21262d'}},
+                  y:{ticks:{color:'#6e7681',font:{size:10},callback:v=>fmtAxis(v)},grid:{color:'#21262d'}}}}});
+    }
+    // Transportadora da Cobertura — filtrada pelas NFs do faturamento E pelo período
+    if(S.cob){
+      const fatNFSet=new Set(notasU.map(r=>r.num_fiscal).filter(n=>n>0));
+      const cobFat=S.cob.filter(r=>{
+        if(fde||fate){ if(!inRange(r.data_criacao,fde,fate)) return false; }
+        if(fatNFSet.size>0 && !fatNFSet.has(r.nota_fiscal)) return false;
+        return true;
+      });
+      // Highlight selected transportadora if active
+      const byT=gCount(cobFat,r=>r.transportadora).slice(0,12);
+      const selT=DRILL.fat_transp||ftr||null;
+      const bgColors=byT.map(([t])=>selT?(t===selT?'#f0b429':'#f0b42933'):'#f0b42966');
+      const brColors=byT.map(([t])=>selT?(t===selT?'#f0b429':'#f0b42955'):'#f0b42999');
+      dChart('ch-fat-transp');
+      const ctxFT=document.getElementById('ch-fat-transp');
+      if(ctxFT) S.charts['ch-fat-transp']=new Chart(ctxFT,{type:'bar',
+        data:{labels:byT.map(x=>x[0]),datasets:[{label:'NFs',data:byT.map(x=>x[1]),backgroundColor:bgColors,borderColor:brColors,borderWidth:1}]},
+        options:{responsive:true,maintainAspectRatio:false,
+          onClick:(_,els)=>{if(els[0])setDrill('fat_transp',byT[els[0].index][0],'fat');},
+          plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}},
+          scales:{x:{ticks:{color:'#6e7681',font:{size:10},maxRotation:45},grid:{color:'#21262d'}},
+                  y:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}}}}});
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  TAB: ENTREGAS  (Cobertura only)
+// ═══════════════════════════════════════════════════
+function buildEnt(){
+  const el=document.getElementById('ent-content');
+  if(!S.cob){el.innerHTML='<p style="color:var(--text3);padding:40px 0">Carregue a Cobertura para visualizar.</p>';return;}
+
+  // Populate filters
+  const entCanais=new Set(),transps=new Set(),ufs=new Set(),pracas=new Set();
+  S.cob.forEach(r=>{
+    if(r.canal2)entCanais.add(r.canal2);
+    if(r.transportadora)transps.add(r.transportadora);
+    if(r.uf)ufs.add(r.uf);
+    if(r.praca)pracas.add(r.praca);
+  });
+  const c2ord=['ML','EC','CF','RV','X','SAC'];
+  const entC2sorted=[...entCanais].sort((a,b)=>(c2ord.indexOf(a)<0?99:c2ord.indexOf(a))-(c2ord.indexOf(b)<0?99:c2ord.indexOf(b)));
+  fillSel('ent-canal',entC2sorted.map(c=>({v:c,l:CANAL2_LBL[c]||c})),'Todos');
+  fillSel('ent-transp',[...transps].sort(),'Todas');
+  fillSel('ent-uf',[...ufs].filter(u=>u&&u.length<=2).sort(),'Todas');
+  fillSel('ent-regiao',REGIAO_ORDER.map(r=>({v:r,l:r})),'Todas');
+  fillSel('ent-praca',[...pracas].sort(),'Todas');
+
+  // Apply filters
+  const fc=gv('ent-canal'),ft=gv('ent-transp'),fu=gv('ent-uf'),fr=gv('ent-regiao'),fp=gv('ent-praca'),fde=gv('ent-de'),fate=gv('ent-ate');
+  const drilT=DRILL.ent_transp, drilP=DRILL.ent_praca;
+  const cob=S.cob.filter(r=>{
+    if(fc&&r.canal2!==fc)return false;
+    if(ft&&r.transportadora!==ft)return false;
+    if(!inUFRegs(r.uf,fu,fr))return false;
+    if(fp&&r.praca!==fp)return false;
+    if(fde||fate){if(!inRange(r.data_criacao,fde,fate))return false;}
+    // Drill filters (interactive chart clicks)
+    if(drilT&&r.transportadora!==drilT)return false;
+    if(drilP&&r.praca!==drilP)return false;
+    return true;
+  });
+  // Update drill label
+  (()=>{
+    const lbl=document.getElementById('ent-drill-label');
+    const btn=document.getElementById('ent-drill-clr');
+    const parts=[];
+    if(drilT)parts.push('Transp: '+drilT);
+    if(drilP)parts.push('Praça: '+drilP);
+    if(lbl){if(parts.length){lbl.textContent='● '+parts.join(' · ');lbl.style.display='inline';}else lbl.style.display='none';}
+    if(btn)btn.style.display=parts.length?'inline-block':'none';
+  })();
+  const nTot=cob.length;
+  const nEntr=cob.filter(r=>IS_ENTREGUE.has(r.microstatus)).length;
+  const nCanc=cob.filter(r=>r.microstatus==='CANCELADO').length;
+  const nTran=cob.filter(r=>!IS_ENTREGUE.has(r.microstatus)&&r.microstatus!=='CANCELADO').length;
+  const nAtr =cob.filter(r=>r.situacao==='Atrasado').length;
+
+  document.getElementById('ti-ent').textContent=fmtN(nTot)+' NFs';
+
+  let html='';
+  html+=kRow([
+    {l:'Entregas Realizadas',v:fmtN(nEntr),s:`${pctN(nEntr,nTot)} de ${fmtN(nTot)} NFs`,c:'var(--accent3)'},
+    {l:'Em Trânsito',        v:fmtN(nTran),s:`${pctN(nTran,nTot)} do total`,              c:'var(--accent2)'},
+    {l:'Atrasados',          v:fmtN(nAtr), s:`${pctN(nAtr,nTot)} do total`,               c:'var(--warn)'},
+    {l:'Cancelados',         v:fmtN(nCanc),s:`${pctN(nCanc,nTot)} do total`,              c:'var(--danger)'},
+  ]);
+
+  // OTIF combo + OT por transportadora
+  // Transportadora OT: excluir cancelados do denominador
+  const transpOT={};
+  cob.forEach(r=>{
+    if(r.microstatus==='CANCELADO') return;
+    const t=r.transportadora||'N/A';
+    if(!transpOT[t])transpOT[t]={total:0,ot:0};
+    transpOT[t].total++;
+    if(IS_ONTIME.has(r.performance)) transpOT[t].ot++;
+  });
+  const otRows=Object.entries(transpOT).map(([t,v])=>({t,total:v.total,ot:v.ot,pct:pctV(v.ot,v.total)})).sort((a,b)=>b.pct-a.pct);
+
+  html+=`<div class="g21">`;
+  html+=chCard('On Time de Entregas','Total × No Prazo × % On Time','ch-ent-otif',240,OTIF_LEG);
+  html+=card('On Time – Por Transportadora','',`<div class="tw"><table>
+    <thead><tr><th>Transportadora</th><th class="tr">NFs</th><th>% On Time</th></tr></thead>
+    <tbody>${otRows.map(r=>{const p=r.pct,col=p>=95?'#10b981':p>=85?'#f0b429':'#ef4444';
+      const sel=drilT===r.t;
+      return`<tr onclick="setDrill('ent_transp','${r.t}','ent')" style="cursor:pointer${sel?';background:rgba(240,180,41,.08);outline:1px solid rgba(240,180,41,.3)':''}" title="Clique para filtrar">
+        <td style="font-weight:${sel?600:400}">${r.t}</td><td class="mono tr">${fmtN(r.total)}</td><td>${pctBar(p,col)}</td></tr>`;}).join('')}</tbody>
+  </table></div>`);
+  html+=`</div>`;
+
+  // Transportadora + Praça
+  html+=`<div class="g2">${chCard('NFs por Transportadora','','ch-ent-transp',200)}${chCard('Distribuição por Praça','','ch-ent-praca',200)}</div>`;
+
+  // Ocorrências
+  // Todas as NFs despachadas (exceto canceladas)
+  const ocorrAll=cob.filter(r=>r.microstatus!=='CANCELADO');
+  if(ocorrAll.length){
+    const ocorrId='oc-search-'+Math.random().toString(36).substr(2,6);
+    const rowsHtml=ocorrAll.map(r=>{
+      const prev=r.prev_entrega;
+      const ent=r.data_entrega;
+      const prevStr=prev?prev.toLocaleDateString('pt-BR'):'—';
+      let diffStr='—';
+      if(ent&&prev){
+        const diff=Math.round((ent-prev)/(1000*60*60*24));
+        diffStr=(diff>0?'+':'')+diff+'d';
+      }
+      const diffCol=diffStr==='—'?'var(--text3)':diffStr.startsWith('+')?'var(--danger)':'var(--accent3)';
+      return`<tr data-search="${[r.nota_fiscal,r.cidade,r.uf,r.transportadora].join(' ').toLowerCase()}">
+        <td class="mono">${r.nota_fiscal}</td>
+        <td>${r.cidade}</td><td>${r.uf}</td><td>${r.transportadora}</td>
+        <td><span class="tag ${IS_ENTREGUE.has(r.microstatus)?'tg':r.microstatus==='CANCELADO'?'tr2':'tb'}" style="font-size:10px">${r.microstatus}</span></td>
+        <td><span class="tag ${r.situacao==='No prazo'?'tg':'ty'}">${r.situacao}</span></td>
+        <td class="mono" style="white-space:nowrap">${prevStr}</td>
+        <td class="mono" style="color:${diffCol};white-space:nowrap">${diffStr}</td>
+      </tr>`;
+    }).join('');
+    html+=card('Lista de NFs Despachadas',`${ocorrAll.length} registros (excl. cancelados)`,`
+      <input class="tbl-search" id="${ocorrId}" placeholder="Buscar por NF, cidade, UF, transportadora…" oninput="filterTable('${ocorrId}')">
+      <div class="scroll-table" style="max-height:320px"><table>
+        <thead><tr><th>NF</th><th>Cidade</th><th>UF</th><th>Transportadora</th><th>Status</th><th>Situação</th><th>Prev. Entrega</th><th>Intervalo</th></tr></thead>
+        <tbody id="tbl-${ocorrId}">${rowsHtml}</tbody>
+      </table></div>`);
+  }
+  el.innerHTML=html;
+
+  requestAnimationFrame(()=>{
+    // OTIF: denominador = todas as NFs não canceladas; numerador = NFs no prazo
+    const byMC={};
+    cob.forEach(r=>{
+      if(r.microstatus==='CANCELADO') return; // excluir cancelados do denominador
+      const k=toMK(r.data_criacao);if(!k)return;
+      if(!byMC[k])byMC[k]={total:0,ot:0};
+      byMC[k].total++;
+      if(IS_ONTIME.has(r.performance)) byMC[k].ot++;
+    });
+    const mks=Object.keys(byMC).sort();
+    mkOtif('ch-ent-otif',mks.map(mkLbl),mks.map(k=>byMC[k].total),mks.map(k=>byMC[k].ot),mks.map(k=>pctV(byMC[k].ot,byMC[k].total)));
+    // Excluir CANCELADO do bar chart para alinhar com a tabela OT (mesma base de cálculo)
+    const cobNotCanc=cob.filter(r=>r.microstatus!=='CANCELADO');
+    const byT=gCount(cobNotCanc,r=>r.transportadora).slice(0,10);
+    // Clickable: highlight selected transportadora
+    const tColors=byT.map(([t])=>drilT?(t===drilT?'#f0b429':'#f0b42933'):'#f0b42999');
+    const tBorder=byT.map(([t])=>drilT?(t===drilT?'#f0b429':'#f0b42966'):'#f0b429');
+    dChart('ch-ent-transp');
+    const ctxT=document.getElementById('ch-ent-transp');
+    if(ctxT) S.charts['ch-ent-transp']=new Chart(ctxT,{type:'bar',
+      data:{labels:byT.map(x=>x[0]),datasets:[{label:'NFs',data:byT.map(x=>x[1]),backgroundColor:tColors,borderColor:tBorder,borderWidth:1}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        onClick:(_,els)=>{if(els[0])setDrill('ent_transp',byT[els[0].index][0],'ent');},
+        plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}},
+        scales:{x:{ticks:{color:'#6e7681',font:{size:10},maxRotation:45},grid:{color:'#21262d'}},
+                y:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}}}}});
+    const byP=gCount(cob,r=>r.praca);
+    dChart('ch-ent-praca');
+    const ctxP=document.getElementById('ch-ent-praca');
+    if(ctxP) S.charts['ch-ent-praca']=new Chart(ctxP,{type:'doughnut',
+      data:{labels:byP.map(x=>x[0]),datasets:[{data:byP.map(x=>x[1]),
+        backgroundColor:byP.map(([p],i)=>drilP?(p===drilP?COLORS[i]:COLORS[i]+'44'):COLORS[i]),
+        borderWidth:0,hoverOffset:4}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        onClick:(_,els)=>{if(els[0])setDrill('ent_praca',byP[els[0].index][0],'ent');},
+        plugins:{legend:{position:'right',labels:{color:'#8b949e',font:{size:11},boxWidth:11,padding:9}},
+                 tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}}}});
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  TAB: AVARIAS  (Avarias + Notas join, independent)
+// ═══════════════════════════════════════════════════
+function buildAv(){
+  const el=document.getElementById('av-content');
+  if(!S.av){el.innerHTML='<p style="color:var(--text3);padding:40px 0">Carregue a Base_Avarias para visualizar.</p>';return;}
+
+  // Constrói lookup NF → canal_2 a partir da Base_Notas
+  const nfToC2={};
+  if(S.notas) S.notas.forEach(r=>{ if((r.num_fiscal||r.numero_nota)>0) nfToC2[r.num_fiscal||r.numero_nota]=r.canal2; });
+
+  // Populate filters
+  const avCanais=new Set(),transps=new Set(),tipos=new Set(),statuses=new Set();
+  S.av.forEach(r=>{
+    const c2=nfToC2[r.nf]; if(c2)avCanais.add(c2);
+    if(r.parceiro)transps.add(r.parceiro);
+    if(r.ocorrencia)tipos.add(r.ocorrencia);
+    if(r.status)statuses.add(r.status);
+  });
+  const c2ord2=['ML','EC','CF','RV','X','SAC'];
+  const avC2sorted=[...avCanais].sort((a,b)=>(c2ord2.indexOf(a)<0?99:c2ord2.indexOf(a))-(c2ord2.indexOf(b)<0?99:c2ord2.indexOf(b)));
+  fillSel('av-canal',avC2sorted.map(c=>({v:c,l:CANAL2_LBL[c]||c})),'Todos');
+  fillSel('av-transp',[...transps].sort(),'Todas');
+  fillSel('av-tipo',[...tipos].sort(),'Todos');
+  fillSel('av-status',[...statuses].sort(),'Todos');
+
+  // Apply filters
+  // Para o filtro de canal: filtra avarias cujo NF tem canal_2 correspondente
+  // Avarias sem NF na Base_Notas: mostradas apenas quando "Todos" selecionado
+  const fc=gv('av-canal'),ft=gv('av-transp'),fti=gv('av-tipo'),fs=gv('av-status'),fde=gv('av-de'),fate=gv('av-ate');
+  const drilAT=DRILL.av_transp, drilAS=DRILL.av_status, drilATi=DRILL.av_tipo;
+  const av=S.av.filter(r=>{
+    if(fc){ const c2=nfToC2[r.nf]; if(c2!==fc) return false; }
+    if(ft&&r.parceiro!==ft)return false;
+    if(fti&&r.ocorrencia!==fti)return false;
+    if(fs&&r.status!==fs)return false;
+    if(!inRange(r.emissao,fde,fate))return false;
+    // Drill filters
+    if(drilAT&&r.parceiro!==drilAT)return false;
+    if(drilAS&&r.status!==drilAS)return false;
+    if(drilATi&&r.ocorrencia!==drilATi)return false;
+    return true;
+  });
+  // Update drill label
+  (()=>{
+    const lbl=document.getElementById('av-drill-label');
+    const btn=document.getElementById('av-drill-clr');
+    const parts=[];
+    if(drilAT) parts.push('Transp: '+drilAT);
+    if(drilAS) parts.push('Status: '+drilAS);
+    if(drilATi)parts.push('Tipo: '+drilATi);
+    if(lbl){if(parts.length){lbl.textContent='● '+parts.join(' · ');lbl.style.display='inline';}else lbl.style.display='none';}
+    if(btn)btn.style.display=parts.length?'inline-block':'none';
+  })();
+
+  const nAv  =av.filter(r=>r.ocorrencia==='Avaria').length;
+  const nExt =av.filter(r=>r.ocorrencia==='Extravio').length;
+  const nAbr =av.filter(r=>r.em_aberto==='Aberto').length;
+  const vlAv =av.reduce((s,r)=>s+r.valor,0);
+  document.getElementById('ti-av').textContent=fmtN(av.length)+' ocorr.';
+
+  let html='';
+  html+=kRow([
+    {l:'Total Avarias',  v:fmtN(nAv),   s:`De ${fmtN(av.length)} ocorrências totais`, c:'var(--danger)'},
+    {l:'Extravios',      v:fmtN(nExt),  s:`${pctN(nExt,av.length)} do total`,          c:'var(--warn)'},
+    {l:'Em Aberto',      v:fmtN(nAbr),  s:`${pctN(nAbr,av.length)} dos casos`,         c:'var(--danger)'},
+    {l:'Valor em Risco', v:fmtBRL(vlAv),s:'Soma de todos os casos',                     c:'var(--accent)'},
+  ]);
+
+  // ── Ratio de avarias de PAINEL ──────────────────────────────────────────
+  // avPainel: avarias com PAINEL, já filtradas (data, transportadora, tipo, status)
+  const avPainel=av.filter(r=>r.produto.toUpperCase().includes('PAINEL'));
+
+  // ── DENOMINADOR: NFs com painel por mês ──────────────────────────────────
+  // Fonte 1 (preferida): Cobertura — data_criacao é uma Date real, sem parsing de texto
+  //   Conta NFs únicas da cobertura (filtrada por data) cujo nota_fiscal está no painelNFSet
+  // Fonte 2 (fallback): Notas — usa data_emissao com parsing de texto
+  const painelNFSet=new Set(
+    (S.notas||[]).filter(r=>r.produto.toUpperCase().includes('PAINEL')).map(r=>r.num_fiscal||r.numero_nota).filter(n=>n>0)
+  );
+
+  const cobPainelByMes={};
+  if(S.cob && painelNFSet.size>0){
+    // Filtrar cobertura pelo mesmo intervalo de datas do filtro de avarias
+    S.cob.filter(r=>painelNFSet.has(r.nota_fiscal)&&inRange(r.data_criacao,fde,fate)).forEach(r=>{
+      const k=toMK(r.data_criacao);if(!k)return;
+      cobPainelByMes[k]=(cobPainelByMes[k]||0)+1;
+    });
+  }
+
+  // Fallback: se não tem cobertura ou painelNFSet vazio, usa notas
+  const notasPainelByMes={};
+  if(Object.keys(cobPainelByMes).length===0 && S.notas){
+    const seen=new Set();
+    S.notas.filter(r=>r.produto.toUpperCase().includes('PAINEL')&&inRange(r.data_emissao,fde,fate)).forEach(r=>{
+      const k=toMK(r.data_emissao);if(!k)return;
+      const uid=`${r.num_fiscal||r.numero_nota}|${k}`;
+      if(!seen.has(uid)){seen.add(uid);notasPainelByMes[k]=(notasPainelByMes[k]||0)+1;}
+    });
+  }
+  // Usar denominador preferido
+  const denominadorByMes=Object.keys(cobPainelByMes).length>0 ? cobPainelByMes : notasPainelByMes;
+  const denomLabel=Object.keys(cobPainelByMes).length>0 ? 'NFs c/ painel (Cobertura)' : 'NFs c/ painel (Notas)';
+
+  // ── NUMERADOR: NFs únicas com Avaria de painel, por mês (de emissão) ────
+  const avPainelByMes={};
+  const seenAv=new Set();
+  avPainel.filter(r=>r.ocorrencia==='Avaria').forEach(r=>{
+    const k=toMK(r.emissao);if(!k)return;
+    const uid=`${r.nf}|${k}`;
+    if(!seenAv.has(uid)){seenAv.add(uid);avPainelByMes[k]=(avPainelByMes[k]||0)+1;}
+  });
+
+  const allMK=[...new Set([...Object.keys(denominadorByMes),...Object.keys(avPainelByMes)])].sort();
+
+  // ── TABELA % Avaria por Transportadora ───────────────────────────────────
+  // Denominador por parceiro: NFs únicas com avaria de PAINEL (qualquer tipo exceto Avaria)
+  //   + NFs com ocorrência Avaria — ou seja: todas NFs únicas com painel vistas para esse parceiro
+  // PORÉM: usamos Cobertura como denominador se disponível (conta NFs reais transportadas)
+  // Se não, usa o total de NFs únicas que apareceram para esse parceiro nas avarias
+
+  // Monta lookup nota_fiscal → transportadora da cobertura (para usar nome da cobertura quando possível)
+  const nfToTransp={};
+  if(S.cob) S.cob.filter(r=>inRange(r.data_criacao,fde,fate)).forEach(r=>{if(r.nota_fiscal>0)nfToTransp[r.nota_fiscal]=r.transportadora||'N/A';});
+
+  // Agrupa por transportadora (da cobertura se possível, senão parceiro da avaria)
+  const transpMapAll={};
+  // Denominador via cobertura: NFs com painel da cobertura por transportadora
+  if(S.cob && painelNFSet.size>0){
+    S.cob.filter(r=>painelNFSet.has(r.nota_fiscal)&&inRange(r.data_criacao,fde,fate)).forEach(r=>{
+      const t=r.transportadora||'N/A';
+      if(!transpMapAll[t])transpMapAll[t]={totalSet:new Set(),avSet:new Set()};
+      transpMapAll[t].totalSet.add(r.nota_fiscal);
+    });
+  }
+  // Numerador via avarias: NFs com ocorrência Avaria de painel
+  avPainel.filter(r=>r.ocorrencia==='Avaria').forEach(r=>{
+    // Tenta achar transportadora da cobertura via NF; senão usa parceiro
+    const t=nfToTransp[r.nf]||r.parceiro||'N/A';
+    if(!transpMapAll[t])transpMapAll[t]={totalSet:new Set(),avSet:new Set()};
+    transpMapAll[t].avSet.add(r.nf);
+    // Se não havia denominador da cobertura, conta NF no denominador também
+    if(!nfToTransp[r.nf]) transpMapAll[t].totalSet.add(r.nf);
+  });
+  const avTRows=Object.entries(transpMapAll)
+    .map(([t,v])=>({t,total:v.totalSet.size,avarias:v.avSet.size,pct:v.totalSet.size?pctV(v.avSet.size,v.totalSet.size):0}))
+    .filter(r=>r.total>0||r.avarias>0)
+    .sort((a,b)=>b.pct-a.pct);
+
+  html+=`<div class="g21">`;
+  html+=chCard('Avarias de Painéis por Mês',`${denomLabel} × NFs c/ Avaria`,'ch-av-ratio',240,AV_LEG);
+  html+=card('% Avaria por Transportadora','Painéis – Parceiro das Avarias',`<div class="tw"><table>
+    <thead><tr><th>Transportadora</th><th class="tr">NFs c/ Painel</th><th class="tr">c/ Avaria</th><th>% Avaria</th></tr></thead>
+    <tbody>${avTRows.map(r=>{
+      const p=r.pct,col=p===0?'#10b981':p<2?'#f0b429':'#ef4444';
+      const sel=drilAT===r.t;
+      return`<tr onclick="setDrill('av_transp','${r.t}','av')" style="cursor:pointer${sel?';background:rgba(240,180,41,.08);outline:1px solid rgba(240,180,41,.3)':''}" title="Clique para filtrar">
+        <td style="font-weight:${sel?600:400}">${r.t}</td><td class="mono tr">${fmtN(r.total)}</td><td class="mono tr">${fmtN(r.avarias)}</td><td>${pctBar(p,col)}</td></tr>`;
+    }).join('')}</tbody></table></div>`);
+  html+=`</div>`;
+
+  // Status + Por Transportadora
+  html+=`<div class="g2">${chCard('Status das Ocorrências','','ch-av-status',180)}${chCard('Por Transportadora (Avarias)','Parceiro das Avarias','ch-av-transp',180)}</div>`;
+
+  // Top Produtos avariados
+  const byPA={};av.filter(r=>r.ocorrencia==='Avaria').forEach(r=>{const k=(r.produto||'N/A').trim();if(!byPA[k])byPA[k]={count:0,valor:0};byPA[k].count++;byPA[k].valor+=r.valor;});
+  const paSorted=Object.entries(byPA).sort((a,b)=>b[1].valor-a[1].valor).slice(0,8);
+  const maxV=paSorted[0]?paSorted[0][1].valor:1;
+  html+=card('Top Produtos Avariados','Por valor',`<div class="prog-wrap">${paSorted.map(([k,v])=>`
+    <div class="prog-item"><div class="prog-lr" style="gap:8px"><span style="font-size:11px;line-height:1.3;word-break:break-word">${k}</span><span style="white-space:nowrap;padding-left:8px">${fmtBRL(v.valor)}</span></div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${(v.valor/maxV*100).toFixed(1)}%;background:var(--danger)"></div></div></div>`).join('')}</div>`);
+
+  // Tabela abertas
+  // All ocorrências (not just open), with search and scroll
+  const avTodos=av.sort((a,b)=>b.valor-a.valor);
+  const avSrchId='av-srch-'+Math.random().toString(36).substr(2,6);
+  const avRowsHtml=avTodos.map(r=>`<tr data-search="${[r.ticket,r.nf,r.parceiro,r.produto,r.status].join(' ').toLowerCase()}">
+    <td class="mono">${r.ticket}</td>
+    <td class="mono">${r.nf}</td>
+    <td>${r.parceiro}</td>
+    <td class="mono tr">${fmtBRL(r.valor)}</td>
+    <td style="font-size:11px;white-space:normal;word-break:break-word;max-width:280px">${r.produto}</td>
+    <td><span class="tag ${r.status==='Em negociação'||r.status==='Ag. Pagamento'?'ty':r.status==='Reembolsado'?'tg':'tgr'}" style="font-size:10px">${r.status}</span></td>
+  </tr>`).join('');
+  html+=card('Todas as Ocorrências',`${avTodos.length} casos`,`
+    <input class="tbl-search" id="${avSrchId}" placeholder="Buscar por ticket, NF, transportadora, produto, status…" oninput="filterTable('${avSrchId}')">
+    <div class="scroll-table" style="max-height:360px"><table>
+      <thead><tr><th>Ticket</th><th>NF</th><th>Transportadora</th><th class="tr">Valor</th><th>Produto</th><th>Status</th></tr></thead>
+      <tbody id="tbl-${avSrchId}">${avRowsHtml}</tbody>
+    </table></div>`);
+
+  el.innerHTML=html;
+
+  requestAnimationFrame(()=>{
+    // Ratio chart — usa denominador preferido (cobertura se disponível)
+    const totM=allMK.map(k=>denominadorByMes[k]||0);
+    const avM =allMK.map(k=>avPainelByMes[k]||0);
+    const pctM=allMK.map((k,i)=>totM[i]?pctV(avM[i],totM[i]):0);
+    mkAvRatio('ch-av-ratio',allMK.map(mkLbl),totM,avM,pctM);
+    // Status donut
+    const bySt=gCount(av,r=>r.status);
+    dChart('ch-av-status');
+    const ctxAS=document.getElementById('ch-av-status');
+    if(ctxAS) S.charts['ch-av-status']=new Chart(ctxAS,{type:'doughnut',
+      data:{labels:bySt.map(x=>x[0]),datasets:[{data:bySt.map(x=>x[1]),
+        backgroundColor:bySt.map(([s],i)=>drilAS?(s===drilAS?COLORS[i]:COLORS[i]+'44'):COLORS[i]),
+        borderWidth:0,hoverOffset:4}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        onClick:(_,els)=>{if(els[0])setDrill('av_status',bySt[els[0].index][0],'av');},
+        plugins:{legend:{position:'right',labels:{color:'#8b949e',font:{size:11},boxWidth:11,padding:9}},
+                 tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}}}});
+    // Por transportadora bar
+    const byPc=gCount(av,r=>r.parceiro).slice(0,10);
+    const avTcol=byPc.map(([t])=>drilAT?(t===drilAT?'#ef4444':'#ef444433'):'#ef444499');
+    const avTbrd=byPc.map(([t])=>drilAT?(t===drilAT?'#ef4444':'#ef444466'):'#ef4444');
+    dChart('ch-av-transp');
+    const ctxAT=document.getElementById('ch-av-transp');
+    if(ctxAT) S.charts['ch-av-transp']=new Chart(ctxAT,{type:'bar',
+      data:{labels:byPc.map(x=>x[0]),datasets:[{label:'Ocorrências',data:byPc.map(x=>x[1]),backgroundColor:avTcol,borderColor:avTbrd,borderWidth:1}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        onClick:(_,els)=>{if(els[0])setDrill('av_transp',byPc[els[0].index][0],'av');},
+        plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}},
+        scales:{x:{ticks:{color:'#6e7681',font:{size:10},maxRotation:45},grid:{color:'#21262d'}},
+                y:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}}}}});
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',async()=>{
+  try{
+    const ok=await loadSaved();
+    if(ok){
+      if(S.notas){document.getElementById('lbl-n').classList.add('loaded');document.getElementById('us-n').textContent=S.notas.length.toLocaleString('pt-BR')+' linhas';}
+      if(S.cob)  {document.getElementById('lbl-c').classList.add('loaded');document.getElementById('us-c').textContent=S.cob.length.toLocaleString('pt-BR')+' linhas';}
+      if(S.av)   {document.getElementById('lbl-a').classList.add('loaded');document.getElementById('us-a').textContent=S.av.length.toLocaleString('pt-BR')+' linhas';}
+      updateDbg();buildActive();
+    }
+  }catch(e){console.warn('Erro ao carregar dados salvos:',e);}
+
+});
+
+// ═══════════════════════════════════════════════════
+//  TELA DE ACOMPANHAMENTO
+// ═══════════════════════════════════════════════════
+let AC_DATA = null; // normalized rows
+
+// Senha protegida por hash SHA-256 — a senha real não aparece no código-fonte.
+// Para trocar a senha: acesse https://emn178.github.io/online-tools/sha256.html
+// digite a nova senha, copie o hash gerado e substitua o valor de DASH_HASH abaixo.
+const DASH_HASH = '778a9244ba3b1806106b4005404b922b6a31ac9f1fada0564cc2b578843e3573';
+
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function openDashboard(){
+  document.getElementById('pwd-input').value='';
+  document.getElementById('pwd-error').textContent='';
+  document.getElementById('pwd-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('pwd-input').focus(),100);
+}
+
+async function checkPwd(){
+  const val=document.getElementById('pwd-input').value;
+  if(!val){ document.getElementById('pwd-error').textContent='Digite a senha.'; return; }
+  const hash=await sha256(val);
+  if(hash===DASH_HASH){
+    document.getElementById('pwd-modal').style.display='none';
+    document.getElementById('main-dashboard').style.display='block';
+    document.getElementById('acomp-overlay').style.display='none';
+    setHeaderMode('dashboard');
+    if(Object.values(S).some(v=>v&&Array.isArray(v)&&v.length)) buildActive();
+  } else {
+    document.getElementById('pwd-error').textContent='Senha incorreta. Tente novamente.';
+    document.getElementById('pwd-input').value='';
+    document.getElementById('pwd-input').focus();
+  }
+}
+
+function setHeaderMode(mode){
+  const btn  =document.getElementById('nav-btn');
+  const icon =document.getElementById('hdr-icon');
+  const title=document.getElementById('hdr-title');
+  const sub  =document.getElementById('hdr-sub');
+  if(mode==='dashboard'){
+    icon.textContent='⚡'; icon.style.background='var(--accent)';
+    title.textContent='Dashboard Central da Operação';
+    sub.textContent='Faturamento · Entrega · Avarias';
+    btn.textContent='← Voltar ao Acompanhamento';
+    btn.onclick=closeDashboard;
+    btn.style.cssText='background:rgba(59,130,246,.12);border:1px solid var(--accent2);color:var(--accent2);border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s';
+  } else {
+    icon.textContent='🚚'; icon.style.background='var(--accent2)';
+    title.textContent='Acompanhamento de Entregas';
+    sub.textContent='Notas em Trânsito · Status em Tempo Real';
+    btn.textContent='📊 Tela Dashboard';
+    btn.onclick=openDashboard;
+    btn.style.cssText='background:rgba(240,180,41,.12);border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s';
+  }
+}
+
+function checkPwd(){
+  const val=document.getElementById('pwd-input').value;
+  if(val===DASH_PASSWORD){
+    document.getElementById('pwd-modal').style.display='none';
+    document.getElementById('main-dashboard').style.display='block';
+    document.getElementById('acomp-overlay').style.display='none';
+    setHeaderMode('dashboard');
+    if(Object.values(S).some(v=>v&&Array.isArray(v)&&v.length)) buildActive();
+  } else {
+    document.getElementById('pwd-error').textContent='Senha incorreta. Tente novamente.';
+    document.getElementById('pwd-input').value='';
+    document.getElementById('pwd-input').focus();
+  }
+}
+
+function closeDashboard(){
+  document.getElementById('main-dashboard').style.display='none';
+  document.getElementById('acomp-overlay').style.display='block';
+  setHeaderMode('acomp');
+}
+
+// File upload
+document.getElementById('f-ac').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  document.getElementById('lbl-ac').classList.add('loaded');
+  document.getElementById('udot-ac').style.background='var(--accent3)';
+  document.getElementById('us-ac').textContent=f.name.length>16?f.name.substring(0,14)+'…':f.name;
+  document.getElementById('btn-ac').disabled=false;
+  document.getElementById('ac-info').textContent='Clique em Aplicar para processar';
+  document.getElementById('btn-ac')._file=f;
+});
+
+async function applyAcomp(){
+  const btn=document.getElementById('btn-ac');
+  const f=btn._file; if(!f) return;
+  btn.textContent='Processando…'; btn.disabled=true;
+  try{
+    const ext=f.name.split('.').pop().toLowerCase();
+    const raw=ext==='csv'?await readCSV(f):await readXLSX(f);
+    AC_DATA=normalizeAcomp(raw);
+    const rawCount=raw.length, filtCount=AC_DATA.length;
+    if(rawCount===0){
+      document.getElementById('ac-info').textContent='⚠️ 0 linhas lidas — arquivo usa formato Strict Open XML. Abra no Excel → Salvar Como → Excel Workbook (.xlsx) ou exporte como CSV.';
+      document.getElementById('ac-info').style.color='var(--warn)';
+    } else {
+      document.getElementById('ac-info').textContent=`✅ ${rawCount.toLocaleString('pt-BR')} linhas lidas · ${filtCount.toLocaleString('pt-BR')} registros ativos (excl. cancelados)`;
+      document.getElementById('ac-info').style.color='var(--accent3)';
+    }
+    buildAcomp();
+  }catch(err){
+    document.getElementById('ac-info').textContent='❌ Erro: '+err.message;
+    console.error(err);
+  }
+  btn.textContent='Aplicar'; btn.disabled=false;
+}
+
+function normalizeAcomp(rows){
+  return rows.map(r=>{
+    const getD=(...keys)=>{
+      for(const k of keys){
+        let v=rGet(r,k); if(!v) continue;
+        if(v instanceof Date) return isNaN(v)?null:v;
+        if(typeof v==='number') return new Date(Math.round((v-25569)*86400*1000));
+        const d=new Date(v.toString()); return isNaN(d)?null:d;
+      }
+      return null;
+    };
+    const prev=getD('Previsão Entrega Cliente','Previsao Entrega Cliente','prev_entrega');
+    const ent =getD('Data Entrega','data_entrega');
+    const dc  =getD('Data Criação','Data Criacao','data_criacao');
+    const ms  =(rGet(r,'MicroStatus','Microstatus')||'').toString().trim().toUpperCase();
+    const cancelado=ms==='CANCELADO';
+    const entregue =ent!=null;
+    let statusAc='Sem previsão';
+    if(cancelado) statusAc='Cancelado';
+    else if(entregue) statusAc='Entregue';
+    else if(prev){
+      const hoje=new Date(); hoje.setHours(0,0,0,0);
+      statusAc=prev<hoje?'Atraso':'Em trânsito';
+    }
+    // dias de atraso (para não-entregues em atraso)
+    let diasAtraso=null;
+    if(statusAc==='Atraso'&&prev){
+      const hoje=new Date(); hoje.setHours(0,0,0,0);
+      diasAtraso=Math.max(1,Math.round((hoje-prev)/(86400000)));
+    }
+    return{
+      nota_fiscal: Number(rGet(r,'Nota Fiscal','nota_fiscal')||0),
+      transportadora: cleanTransp((rGet(r,'Transportadora','transportadora')||'').toString().trim()),
+      cidade:(rGet(r,'Cidade do Destinatário','Cidade do Destinatario')||'').toString().trim(),
+      uf:    toSigla((rGet(r,'UF','uf')||'').toString().trim()),
+      canal2:cobCanalToC2((rGet(r,'Canal de Vendas','canal_de_vendas')||'').toString().trim()),
+      acCanal:acCanalGroup((rGet(r,'Canal de Vendas','canal_de_vendas')||'').toString().trim()),
+      praca: (rGet(r,'Praça','Praca')||'').toString().trim(),
+      microstatus: ms,
+      prev_entrega: prev,
+      data_entrega: ent,
+      data_criacao: dc,
+      statusAc,
+      diasAtraso,
+    };
+  }).filter(r=>r.statusAc!=='Cancelado');
+}
+
+// ── Acompanhamento drill state
+const AC_DRILL = { transp:null, uf:null, regiao:null, canal:null };
+function acDrill(key, val){
+  AC_DRILL[key] = AC_DRILL[key]===val ? null : val;
+  buildAcomp();
+}
+
+function buildAcomp(){
+  const el=document.getElementById('acomp-content');
+  if(!AC_DATA||!AC_DATA.length){el.innerHTML='<p style="color:var(--text3);padding:40px">Sem dados.</p>';return;}
+
+  const ALL=AC_DATA;
+  const dT=AC_DRILL.transp, dU=AC_DRILL.uf, dR=AC_DRILL.regiao;
+
+  // Apply drill filters
+  const dC=AC_DRILL.canal;
+  const rows=ALL.filter(r=>{
+    if(dT && r.transportadora!==dT) return false;
+    if(dU && r.uf!==dU) return false;
+    if(dR){ const us=REGIOES[dR]; if(us&&!us.includes(r.uf)) return false; }
+    if(dC && r.acCanal!==dC) return false;
+    return true;
+  });
+
+  const total     =rows.length;
+  const atrasados =rows.filter(r=>r.statusAc==='Atraso');
+  const emTransito=rows.filter(r=>r.statusAc==='Em trânsito');
+  const entregues =rows.filter(r=>r.statusAc==='Entregue');
+  const nAtr=atrasados.length, nTran=emTransito.length, nEnt=entregues.length;
+
+  // KPI extras: média dias atraso, máx dias atraso, notas >15d
+  const diasArr=atrasados.map(r=>r.diasAtraso||0).filter(d=>d>0);
+  const mediaAtr=diasArr.length ? (diasArr.reduce((a,b)=>a+b,0)/diasArr.length).toFixed(1) : '—';
+  const maxAtr=diasArr.length ? Math.max(...diasArr) : 0;
+  const gt15=atrasados.filter(r=>(r.diasAtraso||0)>15).length;
+
+  // Pizza data: transportadoras
+  const transpAtr=gCount(atrasados,r=>r.transportadora);
+  const emMov=rows.filter(r=>r.statusAc==='Atraso'||r.statusAc==='Em trânsito');
+  const transpMov=gCount(emMov,r=>r.transportadora);
+
+  // All transportadoras present in ALL data (for filter buttons)
+  const allTransps=[...new Set(ALL.map(r=>r.transportadora))].filter(Boolean).sort();
+  // Stable color map: each transportadora gets the same color across all charts
+  const transpColorMap={};
+  allTransps.forEach((t,i)=>{ transpColorMap[t]=CHART_COLORS[i%CHART_COLORS.length]; });
+  const tc=(t,alpha)=>{ const c=transpColorMap[t]||CHART_COLORS[0]; return alpha?c+alpha:c; };
+
+  // Stacked buckets
+  const transpSet=new Set(atrasados.map(r=>r.transportadora));
+  const transpList=[...transpSet].sort();
+  const diasBuckets={};
+  atrasados.forEach(r=>{const d=r.diasAtraso||1;const k=d>=20?'20+':String(d);diasBuckets[k]=(diasBuckets[k]||0)+1;});
+  const bucketOrder=[...Array(19).keys()].map(i=>String(i+1)).concat(['20+']);
+  const bLabels=bucketOrder.filter(k=>diasBuckets[k]>0);
+  const transpBuckets={};
+  atrasados.forEach(r=>{const t=r.transportadora||'N/A';const d=r.diasAtraso||1;const k=d>=20?'20+':String(d);if(!transpBuckets[t])transpBuckets[t]={};transpBuckets[t][k]=(transpBuckets[t][k]||0)+1;});
+
+  // UF / Região
+  const ufAtr=gCount(atrasados,r=>r.uf);
+  const regiaoAtr=gCount(atrasados,r=>UF_TO_REGIAO[r.uf]||'Outros');
+
+  // All UFs in data
+  const allUFs=[...new Set(ALL.map(r=>r.uf))].filter(u=>u&&u.length===2).sort();
+
+  // Summary table by transportadora
+  const transpSummary={};
+  atrasados.forEach(r=>{
+    const t=r.transportadora||'N/A';
+    if(!transpSummary[t])transpSummary[t]={count:0,sumDias:0,maxDias:0};
+    const d=r.diasAtraso||0;
+    transpSummary[t].count++;
+    transpSummary[t].sumDias+=d;
+    if(d>transpSummary[t].maxDias)transpSummary[t].maxDias=d;
+  });
+  const summaryRows=Object.entries(transpSummary)
+    .map(([t,v])=>({t,count:v.count,media:(v.count?v.sumDias/v.count:0).toFixed(1),max:v.maxDias}))
+    .sort((a,b)=>b.count-a.count);
+
+
+  // Drill indicator
+  const drillParts=[];
+  if(dT)drillParts.push('Transp: '+dT);
+  if(dU)drillParts.push('UF: '+dU);
+  if(dR)drillParts.push('Região: '+dR);
+  if(dC)drillParts.push('Canal: '+dC);
+  const drillHtml=drillParts.length
+    ? `<div style="margin-bottom:12px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;color:var(--accent);font-family:'DM Mono',monospace">● ${drillParts.join(' · ')}</span>
+        <button onclick="AC_DRILL.transp=null;AC_DRILL.uf=null;AC_DRILL.regiao=null;AC_DRILL.canal=null;buildAcomp()" style="font-size:11px;background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);color:var(--accent);border-radius:4px;padding:2px 9px;cursor:pointer">✕ Limpar drill</button>
+      </div>` : '';
+
+  let html=drillHtml;
+
+  // ── FILTER BAR ────────────────────────────────────────────────
+  // Transportadora buttons
+  const transpBtns=allTransps.map(t=>{
+    const sel=dT===t;
+    const col=transpColorMap[t]||'#8b949e';
+    return `<button onclick="acDrill('transp','${t}')" style="padding:4px 12px;font-size:11px;border-radius:20px;border:1px solid ${sel?col:'var(--border)'};background:${sel?col+'33':'var(--surface2)'};color:${sel?col:'var(--text2)'};cursor:pointer;font-family:inherit;font-weight:${sel?600:400};transition:all .2s">${t}</button>`;
+  }).join('');
+  // UF select
+  const ufOpts=allUFs.map(u=>`<option value="${u}"${dU===u?' selected':''}>${u}</option>`).join('');
+  // Região select
+  const regOpts=REGIAO_ORDER.map(r=>`<option value="${r}"${dR===r?' selected':''}>${r}</option>`).join('');
+
+  html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <span style="font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Transportadoras (${allTransps.length}):</span>
+      ${transpBtns}
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px">Região:</span>
+      <select onchange="acDrill('regiao',this.value||(AC_DRILL.regiao=null,buildAcomp(),null))" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-size:12px;font-family:inherit;outline:none">
+        <option value="">Todas</option>${regOpts}
+      </select>
+      <span style="font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px">UF:</span>
+      <select onchange="acDrill('uf',this.value||(AC_DRILL.uf=null,buildAcomp(),null))" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-size:12px;font-family:inherit;outline:none">
+        <option value="">Todas</option>${ufOpts}
+      </select>
+      <span style="font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px">Canal:</span>
+      <select onchange="acDrill('canal',this.value||(AC_DRILL.canal=null,buildAcomp(),null))" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-size:12px;font-family:inherit;outline:none">
+        <option value="">Todos</option>
+        <option value="Comercial"${dC==='Comercial'?' selected':''}>Comercial</option>
+        <option value="Ecommerce"${dC==='Ecommerce'?' selected':''}>Ecommerce</option>
+        <option value="Mercado Livre"${dC==='Mercado Livre'?' selected':''}>Mercado Livre</option>
+      </select>
+    </div>
+  </div>`;
+
+  // ── KPIs ──────────────────────────────────────────────────────
+  // Atraso: show % relative to em trânsito; others: no %
+  const pctAtrSobTran=nTran>0?((nAtr/nTran)*100).toFixed(1)+'% das notas em trânsito':'—';
+  const maxCol=maxAtr>=15?'var(--danger)':maxAtr>=7?'var(--warn)':'var(--accent3)';
+  html+=`<div class="kpi-row" style="margin-bottom:14px">
+    <div class="kpi" style="--kc:var(--danger)"><div class="kpi-lbl">Em Atraso</div><div class="kpi-val">${fmtN(nAtr)}</div><div class="kpi-sub">${pctAtrSobTran}</div></div>
+    <div class="kpi" style="--kc:var(--accent2)"><div class="kpi-lbl">Em Trânsito</div><div class="kpi-val">${fmtN(nTran)}</div><div class="kpi-sub">&nbsp;</div></div>
+    <div class="kpi" style="--kc:var(--accent3)"><div class="kpi-lbl">Entregues</div><div class="kpi-val">${fmtN(nEnt)}</div><div class="kpi-sub">&nbsp;</div></div>
+    <div class="kpi" style="--kc:var(--warn)"><div class="kpi-lbl">Média de Atraso</div><div class="kpi-val">${mediaAtr}d</div><div class="kpi-sub">Só notas em atraso</div></div>
+    <div class="kpi" style="--kc:${maxCol}"><div class="kpi-lbl">Maior Atraso</div><div class="kpi-val">${maxAtr}d</div><div class="kpi-sub">${fmtN(gt15)} notas com +15 dias</div></div>
+  </div>`;
+
+  // ── Row 1: duas pizzas + bar transp ──────────────────────────
+  html+=`<div class="g3" style="margin-bottom:14px">
+    <div class="card no-mb"><div class="ch"><span class="ct">% Atrasos por Transportadora</span><span class="cs">Só notas em atraso · clique</span></div><div class="cwrap" style="height:240px"><canvas id="ac-pizza-atr"></canvas></div></div>
+    <div class="card no-mb"><div class="ch"><span class="ct">% Em Movimento por Transportadora</span><span class="cs">Atraso + Trânsito · clique</span></div><div class="cwrap" style="height:240px"><canvas id="ac-pizza-geral"></canvas></div></div>
+    <div class="card no-mb"><div class="ch"><span class="ct">Atrasos por Transportadora</span><span class="cs">Qtd NFs em atraso</span></div><div class="cwrap" style="height:240px"><canvas id="ac-bar-transp"></canvas></div></div>
+  </div>`;
+
+  // ── Row 2: stacked ───────────────────────────────────────────
+  const tListHtml=transpList.slice(0,12).map((t,i)=>`<span onclick="acDrill('transp','${t}')" style="display:flex;align-items:center;gap:4px;font-size:11px;color:${dT&&dT!==t?'var(--text3)':'var(--text2)'};cursor:pointer"><span style="width:9px;height:9px;border-radius:2px;background:${tc(t)};display:inline-block"></span>${t}</span>`).join('');
+  html+=`<div class="card" style="margin-bottom:14px">
+    <div class="ch"><span class="ct">Transportadoras por Faixa de Dias em Atraso</span><span class="cs">${nAtr} notas em atraso</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">${tListHtml}</div>
+    <div class="cwrap" style="height:260px"><canvas id="ac-stacked"></canvas></div>
+  </div>`;
+
+  // ── Row 3: UF + Região ───────────────────────────────────────
+  html+=`<div class="g2" style="margin-bottom:14px">
+    <div class="card no-mb"><div class="ch"><span class="ct">Atrasos por UF</span><span class="cs">Clique para filtrar</span></div><div class="cwrap" style="height:220px"><canvas id="ac-bar-uf"></canvas></div></div>
+    <div class="card no-mb"><div class="ch"><span class="ct">Atrasos por Região</span><span class="cs">Clique para filtrar</span></div><div class="cwrap" style="height:220px"><canvas id="ac-bar-reg"></canvas></div></div>
+  </div>`;
+
+  // ── Tabela resumo por transportadora ─────────────────────────
+  html+=`<div class="card" style="margin-bottom:14px">
+    <div class="ch"><span class="ct">Resumo por Transportadora</span><span class="cs">Só notas em atraso</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Transportadora</th><th class="tr">Notas</th><th class="tr">Média (dias)</th><th class="tr">Máx (dias)</th></tr></thead>
+      <tbody>${summaryRows.map(r=>{
+        const maxCol2=r.max>=15?'var(--danger)':r.max>=7?'var(--warn)':'var(--accent3)';
+        return`<tr>
+          <td>${r.t}</td>
+          <td class="mono tr">${fmtN(r.count)}</td>
+          <td class="mono tr">${r.media}</td>
+          <td><div style="display:flex;justify-content:flex-end"><span style="background:${maxCol2};color:#000;border-radius:10px;padding:2px 9px;font-size:11px;font-weight:700;font-family:'DM Mono',monospace">${r.max}</span></div></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>
+  </div>`;
+
+  // ── Tabela NFs em atraso ──────────────────────────────────────
+  const atrSrchId='ac-srch';
+  html+=`<div class="card">
+    <div class="ch"><span class="ct">NFs em Atraso</span><span class="cs">${nAtr} registros</span></div>
+    <input class="tbl-search" id="${atrSrchId}" placeholder="Buscar por NF, cidade, UF, transportadora…" oninput="filterTable('${atrSrchId}')">
+    <div class="scroll-table" style="max-height:320px"><table>
+      <thead><tr><th>NF</th><th>Transportadora</th><th>Cidade</th><th>UF</th><th>Prev. Entrega</th><th class="tr">Dias Atraso</th></tr></thead>
+      <tbody id="tbl-${atrSrchId}">${atrasados.sort((a,b)=>(b.diasAtraso||0)-(a.diasAtraso||0)).map(r=>{
+        const prevStr=r.prev_entrega?r.prev_entrega.toLocaleDateString('pt-BR'):'—';
+        const d=r.diasAtraso||0;
+        const dCol=d>=15?'var(--danger)':d>=7?'var(--warn)':'var(--accent)';
+        return`<tr data-search="${[r.nota_fiscal,r.transportadora,r.cidade,r.uf].join(' ').toLowerCase()}">
+          <td class="mono">${r.nota_fiscal}</td><td>${r.transportadora}</td><td>${r.cidade}</td><td>${r.uf}</td>
+          <td class="mono">${prevStr}</td>
+          <td><div style="display:flex;justify-content:flex-end"><span style="background:${dCol};color:#000;border-radius:10px;padding:2px 9px;font-size:11px;font-weight:700;font-family:'DM Mono',monospace">${d}d</span></div></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>
+  </div>`;
+
+  el.innerHTML=html;
+
+  // Fix selects: onchange with empty value needs special handling
+  ['regiao','uf','canal'].forEach(key=>{
+    const sel=el.querySelector(`select[onchange*="'${key}'"]`);
+    if(sel){
+      sel.onchange=function(){
+        if(this.value) acDrill(key,this.value);
+        else{ AC_DRILL[key]=null; buildAcomp(); }
+      };
+    }
+  });
+
+  requestAnimationFrame(()=>{
+
+    // ── Donut with inline % labels ───────────────────────────
+    function mkAcDonut(id, labelsArr, dataArr, totalN, clickKey){
+      dChart(id);
+      const ctx=document.getElementById(id); if(!ctx) return;
+      S.charts[id]=new Chart(ctx,{
+        type:'doughnut',
+        data:{
+          labels:labelsArr,
+          datasets:[{data:dataArr,
+            backgroundColor:labelsArr.map((l)=>transpColorMap[l]||CHART_COLORS[Object.keys(transpColorMap).indexOf(l)%CHART_COLORS.length]||CHART_COLORS[0]),
+            borderWidth:2,borderColor:'#161b22',hoverOffset:6}]
+        },
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          onClick:(_,els)=>{if(els[0]!=null&&clickKey)acDrill(clickKey,labelsArr[els[0].index]);},
+          plugins:{
+            legend:{position:'right',labels:{color:'#8b949e',font:{size:10},boxWidth:10,padding:8}},
+            tooltip:{...TIP,callbacks:{label:c=>' '+c.label+': '+c.raw+' ('+pctN(c.raw,totalN)+')'}}
+          }
+        },
+        plugins:[{
+          id:'pieLbl',
+          afterDatasetsDraw(chart){
+            const c=chart.ctx;
+            chart.data.datasets.forEach((_,di)=>{
+              chart.getDatasetMeta(di).data.forEach((el,i)=>{
+                const val=chart.data.datasets[di].data[i];
+                if(!val||val===0||totalN===0) return;
+                const pct=((val/totalN)*100).toFixed(1)+'%';
+                // only show if slice is big enough (>3%)
+                if((val/totalN)<0.03) return;
+                const{x,y}=el.tooltipPosition();
+                c.save();
+                c.font='bold 11px Inter,sans-serif';
+                c.fillStyle='#fff';
+                c.textAlign='center';
+                c.textBaseline='middle';
+                c.fillText(pct,x,y);
+                c.restore();
+              });
+            });
+          }
+        }]
+      });
+    }
+
+    // ── Bar with inline integer labels above bars ─────────────
+    function mkAcBar(id, labelsArr, dataArr, color, clickKey, horizontal=false, stacked=false, datasets=null){
+      dChart(id);
+      const ctx=document.getElementById(id); if(!ctx) return;
+
+      // Color: dim non-selected if drill active
+      function barColors(lbls, clr, key){
+        const sel=key?AC_DRILL[key]:null;
+        return lbls.map(l=>sel&&sel!==l?clr+'33':clr+'cc');
+      }
+
+      const ds=datasets||[{
+        label:'NFs',
+        data:dataArr,
+        backgroundColor:barColors(labelsArr,color,clickKey),
+        borderColor:color,
+        borderWidth:1,
+        borderRadius:3,
+      }];
+
+      S.charts[id]=new Chart(ctx,{
+        type:'bar',
+        data:{labels:labelsArr,datasets:ds},
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          indexAxis:horizontal?'y':'x',
+          onClick:(_,els)=>{if(els[0]!=null&&clickKey)acDrill(clickKey,labelsArr[els[0].index]);},
+          layout:{padding:{top:horizontal?4:22,right:horizontal?36:8,left:4,bottom:4}},
+          plugins:{
+            legend:{display:!!datasets,labels:{color:'#8b949e',font:{size:10},boxWidth:9,padding:8}},
+            tooltip:{...TIP,mode:stacked?'index':'nearest',intersect:!stacked},
+          },
+          scales:{
+            x:{stacked,ticks:{color:'#6e7681',font:{size:10},maxRotation:horizontal?0:45},grid:{color:'#21262d'}},
+            y:{stacked,ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}}
+          }
+        },
+        plugins:[{
+          id:'barLbl',
+          afterDatasetsDraw(chart){
+            const c=chart.ctx;
+            const isH=chart.options.indexAxis==='y';
+            chart.data.datasets.forEach((_,di)=>{
+              const meta=chart.getDatasetMeta(di);
+              if(meta.hidden) return;
+              meta.data.forEach((bar,i)=>{
+                const val=chart.data.datasets[di].data[i];
+                if(!val||val<1) return;
+                const {x,y,base,width,height}=bar.getProps(['x','y','base','width','height'],true);
+                c.save();
+                c.font='bold 11px Inter,sans-serif';
+                c.fillStyle='#e6edf3';
+                c.textAlign='center';
+                c.textBaseline='middle';
+                if(isH){
+                  // horizontal: label to the right of bar end
+                  c.textAlign='left';
+                  c.fillText(String(val), x+5, y);
+                } else if(stacked){
+                  // stacked: label in center of segment if tall enough
+                  const segH=Math.abs(y-base);
+                  if(segH>=16){
+                    c.fillText(String(val), x, y+(base-y)/2);
+                  }
+                } else {
+                  // vertical: label above bar, centered
+                  c.fillText(String(val), x, y-8);
+                }
+                c.restore();
+              });
+            });
+          }
+        }]
+      });
+    }
+
+    // Render charts
+    mkAcDonut('ac-pizza-atr',   transpAtr.slice(0,12).map(x=>x[0]),  transpAtr.slice(0,12).map(x=>x[1]),  nAtr,       'transp');
+    mkAcDonut('ac-pizza-geral', transpMov.slice(0,12).map(x=>x[0]),  transpMov.slice(0,12).map(x=>x[1]),  emMov.length,'transp');
+    // Transp bar: use per-transportadora stable color
+    {
+      const lbls=transpAtr.slice(0,12).map(x=>x[0]);
+      const dat =transpAtr.slice(0,12).map(x=>x[1]);
+      const bgc =lbls.map(l=>dT&&dT!==l?tc(l,'44'):tc(l,'cc'));
+      mkAcBar('ac-bar-transp', lbls, dat, '#ef4444', 'transp', true, false,
+        [{label:'NFs',data:dat,backgroundColor:bgc,borderColor:lbls.map(l=>tc(l)),borderWidth:1,borderRadius:3}]);
+    }
+
+    // Stacked
+    const tList=transpList.slice(0,12);
+    const stackedDs=tList.map((t)=>({
+      label:t,
+      data:bLabels.map(k=>(transpBuckets[t]&&transpBuckets[t][k])||0),
+      backgroundColor:dT&&dT!==t?tc(t,'44'):tc(t,'cc'),
+      borderWidth:0,borderRadius:2,
+    }));
+    mkAcBar('ac-stacked', bLabels.map(k=>k==='20+'?'20+':k+'d'), null, '#3b82f6', null, false, true, stackedDs);
+
+    // UF bar
+    mkAcBar('ac-bar-uf',  ufAtr.map(x=>x[0]),     ufAtr.map(x=>x[1]),     '#ef4444', 'uf');
+    // Região bar
+    mkAcBar('ac-bar-reg', regiaoAtr.map(x=>x[0]),  regiaoAtr.map(x=>x[1]), '#f97316', 'regiao');
+  });
+}
+
+
+</script>
+</div><!-- /main-dashboard -->
+</body>
+</html>
