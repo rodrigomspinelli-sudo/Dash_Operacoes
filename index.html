@@ -16,50 +16,63 @@
   --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
   --r:10px;
 }
+/* ── LIGHT MODE ── */
+body.light-mode{
+  --bg:#f5f6d5;--surface:#fefef0;--surface2:#eeefbc;--border:#d8da9a;
+  --text:#2d2e0f;--text2:#4a4c1a;--text3:#6b6d30;
+  --accent:#b45309;--accent2:#1d4ed8;--accent3:#047857;
+  --danger:#b91c1c;--warn:#c2410c;
+}
+body.light-mode header{box-shadow:0 1px 4px rgba(0,0,0,.10)}
+body.light-mode .card{box-shadow:0 1px 3px rgba(0,0,0,.07)}
+body.light-mode select,body.light-mode input[type=date],body.light-mode .tbl-search{
+  background:var(--surface);color:var(--text);border-color:var(--border);
+}
+body.light-mode ::-webkit-scrollbar-thumb{background:#c8ca88}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:16px;min-height:100vh}
 
 /* ── HEADER ── */
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:600}
 .logo{display:flex;align-items:center;gap:11px}
-.logo-icon{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}
-.logo h1{font-size:15px;font-weight:600;letter-spacing:-.3px}
-.logo span{font-size:11px;color:var(--text3)}
-.last-upd{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.logo-icon{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.logo h1{font-size:17px;font-weight:600;letter-spacing:-.3px}
+.logo span{font-size:13px;color:var(--text3)}
+.last-upd{font-size:13px;color:var(--text3);font-family:'DM Mono',monospace}
 
 /* ── UPLOAD ── */
 #upload-panel{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.up-label{font-size:12px;color:var(--text2);font-weight:500;white-space:nowrap}
+.up-label{font-size:14px;color:var(--text2);font-weight:500;white-space:nowrap}
 .up-grp{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .up-item{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 11px;cursor:pointer;transition:border-color .2s}
 .up-item:hover{border-color:var(--accent)}
 .up-item.loaded{border-color:var(--accent3)}
 .up-item input{display:none}
-.up-item .un{font-size:12px;font-weight:500;white-space:nowrap}
-.up-item .us{font-size:10px;font-family:'DM Mono',monospace;padding:2px 6px;border-radius:9px;background:var(--border);color:var(--text3)}
+.up-item .un{font-size:14px;font-weight:500;white-space:nowrap}
+.up-item .us{font-size:12px;font-family:'DM Mono',monospace;padding:2px 6px;border-radius:9px;background:var(--border);color:var(--text3)}
 .up-item.loaded .us{background:rgba(16,185,129,.15);color:var(--accent3)}
 .up-dot{width:7px;height:7px;border-radius:50%;background:var(--border);flex-shrink:0}
 .up-item.loaded .up-dot{background:var(--accent3)}
-.btn-apply{background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;white-space:nowrap}
+.btn-apply{background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 16px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s;white-space:nowrap}
 .btn-apply:hover{opacity:.85}
 .btn-apply:disabled{opacity:.4;cursor:not-allowed}
-#up-info{font-size:11px;color:var(--text3)}
+#up-info{font-size:13px;color:var(--text3)}
 
 /* ── TABS ── */
 #tab-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;gap:0;position:sticky;top:57px;z-index:150}
-.tab-btn{padding:12px 20px;font-size:13px;font-weight:500;color:var(--text3);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
+.tab-btn{padding:12px 20px;font-size:15px;font-weight:500;color:var(--text3);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
 .tab-btn:hover{color:var(--text2)}
 .tab-btn.active{color:var(--text);border-bottom-color:var(--accent)}
-.tab-indicator{font-size:10px;font-family:'DM Mono',monospace;background:var(--surface2);border-radius:8px;padding:1px 6px;margin-left:5px;color:var(--text3)}
+.tab-indicator{font-size:12px;font-family:'DM Mono',monospace;background:var(--surface2);border-radius:8px;padding:1px 6px;margin-left:5px;color:var(--text3)}
 .tab-btn.active .tab-indicator{background:rgba(240,180,41,.15);color:var(--accent)}
 
 /* ── FILTER BAR (per tab) ── */
 .filter-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 28px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .fg{display:flex;align-items:center;gap:5px}
-.fg label{font-size:11px;color:var(--text3);white-space:nowrap}
-select,input[type=date]{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s;max-width:160px}
+.fg label{font-size:13px;color:var(--text3);white-space:nowrap}
+select,input[type=date]{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;max-width:160px}
 select:focus,input[type=date]:focus{border-color:var(--accent)}
-.btn-clr{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:4px 11px;font-size:12px;cursor:pointer;transition:border-color .2s}
+.btn-clr{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:4px 11px;font-size:14px;cursor:pointer;transition:border-color .2s}
 .btn-clr:hover{border-color:var(--accent)}
 .fsep{width:1px;height:16px;background:var(--border);margin:0 3px}
 
@@ -71,9 +84,9 @@ select:focus,input[type=date]:focus{border-color:var(--accent)}
 .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:13px;margin-bottom:18px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px 14px;position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc,var(--accent))}
-.kpi-lbl{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
-.kpi-val{font-size:24px;font-weight:700;letter-spacing:-1px;line-height:1}
-.kpi-sub{font-size:11px;color:var(--text3);margin-top:5px}
+.kpi-lbl{font-size:13px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.kpi-val{font-size:26px;font-weight:700;letter-spacing:-1px;line-height:1}
+.kpi-sub{font-size:13px;color:var(--text3);margin-top:5px}
 
 /* ── GRIDS ── */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
@@ -86,20 +99,20 @@ select:focus,input[type=date]:focus{border-color:var(--accent)}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:14px}
 .card.no-mb{margin-bottom:0}
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.ct{font-size:13px;font-weight:600}
-.cs{font-size:11px;color:var(--text3)}
+.ct{font-size:15px;font-weight:600}
+.cs{font-size:13px;color:var(--text3)}
 .cwrap{position:relative}
 
 /* ── TABLE ── */
 .tw{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:12px}
-thead th{background:var(--surface2);color:var(--text3);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.4px;padding:7px 11px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead th{background:var(--surface2);color:var(--text3);font-weight:500;font-size:13px;text-transform:uppercase;letter-spacing:.4px;padding:7px 11px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
 tbody tr{border-bottom:1px solid var(--border);transition:background .15s}
 tbody tr:hover{background:var(--surface2)}
 tbody td{padding:7px 11px;color:var(--text2)}
 .mono{font-family:'DM Mono',monospace}
 .tr{text-align:right}
-.tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:9px;font-weight:500}
+.tag{display:inline-block;font-size:12px;padding:2px 7px;border-radius:9px;font-weight:500}
 .tg{background:rgba(16,185,129,.15);color:var(--accent3)}
 .ty{background:rgba(240,180,41,.15);color:var(--accent)}
 .tr2{background:rgba(239,68,68,.15);color:var(--danger)}
@@ -110,35 +123,35 @@ tbody td{padding:7px 11px;color:var(--text2)}
 .pct-cell{display:flex;align-items:center;gap:7px}
 .pb-wrap{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:40px}
 .pb-fill{height:100%;border-radius:2px}
-.pv{font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap;min-width:42px;text-align:right}
+.pv{font-family:'DM Mono',monospace;font-size:13px;white-space:nowrap;min-width:42px;text-align:right}
 
 /* ── STATUS LIST ── */
 .st-list{display:flex;flex-direction:column;gap:6px}
 .st-row{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:6px;background:var(--surface2)}
 .st-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.st-name{flex:1;font-size:12px;color:var(--text2)}
-.st-cnt{font-size:12px;font-weight:600;font-family:'DM Mono',monospace}
-.st-pct{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;width:44px;text-align:right}
+.st-name{flex:1;font-size:14px;color:var(--text2)}
+.st-cnt{font-size:14px;font-weight:600;font-family:'DM Mono',monospace}
+.st-pct{font-size:13px;color:var(--text3);font-family:'DM Mono',monospace;width:44px;text-align:right}
 
 /* ── PROG BARS ── */
 .prog-wrap{display:flex;flex-direction:column;gap:9px}
 .prog-item{display:flex;flex-direction:column;gap:3px}
-.prog-lr{display:flex;justify-content:space-between;font-size:11px;color:var(--text2)}
+.prog-lr{display:flex;justify-content:space-between;font-size:13px;color:var(--text2)}
 .prog-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
 .prog-fill{height:100%;border-radius:2px}
 
 /* ── COMBO LEGEND ── */
 .combo-leg{display:flex;align-items:center;gap:14px;margin-bottom:10px;flex-wrap:wrap}
-.cli{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.cli{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text2)}
 .cl-dot{width:10px;height:10px;border-radius:2px}
 .cl-line{width:18px;height:2px;border-radius:1px}
 
 /* ── SECTION TITLE ── */
-.sec{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin:4px 0 13px;display:flex;align-items:center;gap:8px}
+.sec{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin:4px 0 13px;display:flex;align-items:center;gap:8px}
 .sec::after{content:'';flex:1;height:1px;background:var(--border)}
 
 /* ── DEBUG BAR ── */
-#dbg-bar{background:#0d2137;border-bottom:1px solid #1e3a52;padding:5px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:11px;font-family:'DM Mono',monospace}
+#dbg-bar{background:#0d2137;border-bottom:1px solid #1e3a52;padding:5px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:13px;font-family:'DM Mono',monospace}
 .di{display:flex;align-items:center;gap:5px}
 .dd{width:7px;height:7px;border-radius:50%;background:var(--border)}
 .dd.ok{background:var(--accent3)}.dd.warn{background:var(--warn)}.dd.err{background:var(--danger)}
@@ -150,7 +163,7 @@ tbody td{padding:7px 11px;color:var(--text2)}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
 /* date quick-buttons */
-.dqbtn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s}
+.dqbtn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:4px 10px;font-size:14px;cursor:pointer;font-family:inherit;transition:all .2s}
 .dqbtn:hover{border-color:var(--accent);color:var(--text)}
 .dqbtn.active{background:rgba(240,180,41,.15);border-color:var(--accent);color:var(--accent);font-weight:600}
 
@@ -158,7 +171,7 @@ tbody td{padding:7px 11px;color:var(--text2)}
 .scroll-table{overflow-y:auto;overflow-x:auto;border-radius:6px}
 
 /* search box */
-.tbl-search{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 10px;font-size:12px;font-family:inherit;outline:none;width:100%;margin-bottom:8px;transition:border-color .2s}
+.tbl-search{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 10px;font-size:14px;font-family:inherit;outline:none;width:100%;margin-bottom:8px;transition:border-color .2s}
 .tbl-search:focus{border-color:var(--accent)}
 </style>
 </head>
@@ -171,7 +184,8 @@ tbody td{padding:7px 11px;color:var(--text2)}
     <div><h1 id="hdr-title">Acompanhamento de Entregas</h1><span id="hdr-sub">Notas em Trânsito · Status em Tempo Real</span></div>
   </div>
   <div style="display:flex;align-items:center;gap:12px">
-    <button id="nav-btn" onclick="openDashboard()" style="background:rgba(240,180,41,.12);border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">📊 Tela Dashboard</button>
+    <button onclick="toggleTheme()" id="theme-btn" title="Alternar modo claro/escuro" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:7px 10px;font-size:17px;cursor:pointer;line-height:1">☀️</button>
+    <button id="nav-btn" onclick="openDashboard()" style="background:rgba(240,180,41,.12);border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:7px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">📊 Tela Dashboard</button>
     <span class="last-upd" id="last-upd"></span>
   </div>
 </header>
@@ -179,18 +193,18 @@ tbody td{padding:7px 11px;color:var(--text2)}
 <!-- ══════ PASSWORD MODAL ══════ -->
 <div id="pwd-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;align-items:center;justify-content:center;align-items:center;justify-content:center">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px 36px;width:320px;text-align:center">
-    <div style="font-size:28px;margin-bottom:12px">🔒</div>
-    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">Tela Dashboard</div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Digite a senha para acessar</div>
+    <div style="font-size:30px;margin-bottom:12px">🔒</div>
+    <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:6px">Tela Dashboard</div>
+    <div style="font-size:14px;color:var(--text3);margin-bottom:20px">Digite a senha para acessar</div>
     <input id="pwd-input" type="password" placeholder="Senha" 
-      style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;margin-bottom:8px;text-align:center"
+      style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:9px 12px;font-size:16px;font-family:inherit;outline:none;margin-bottom:8px;text-align:center"
       onkeydown="if(event.key==='Enter')checkPwd()">
-    <div id="pwd-error" style="font-size:11px;color:var(--danger);height:16px;margin-bottom:8px"></div>
+    <div id="pwd-error" style="font-size:13px;color:var(--danger);height:16px;margin-bottom:8px"></div>
     <div style="display:flex;gap:8px">
       <button onclick="document.getElementById('pwd-modal').style.display='none'" 
-        style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit">Cancelar</button>
+        style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:8px;font-size:14px;cursor:pointer;font-family:inherit">Cancelar</button>
       <button onclick="checkPwd()" 
-        style="flex:1;background:var(--accent);border:none;color:#000;border-radius:6px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Entrar</button>
+        style="flex:1;background:var(--accent);border:none;color:#000;border-radius:6px;padding:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Entrar</button>
     </div>
   </div>
 </div>
@@ -201,24 +215,32 @@ tbody td{padding:7px 11px;color:var(--text2)}
 
   <!-- Upload -->
   <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <span style="font-size:12px;color:var(--text2);font-weight:500">Base:</span>
+    <span style="font-size:14px;color:var(--text2);font-weight:500">Entregas:</span>
     <label class="up-item" id="lbl-ac" style="cursor:pointer">
       <div class="up-dot" id="udot-ac"></div>
       <input type="file" id="f-ac" accept=".xlsx,.xls,.csv" style="display:none">
-      <span style="font-size:12px;font-weight:500">📋 Planilha de Entregas (.xlsx / .csv)</span>
+      <span style="font-size:14px;font-weight:500">📋 Planilha de Entregas (.xlsx / .csv)</span>
       <span class="us" id="us-ac">Aguardando</span>
     </label>
-    <button class="btn-apply" id="btn-ac" disabled onclick="applyAcomp()">Aplicar</button>
-    <span id="ac-info" style="font-size:11px;color:var(--text3)"></span>
-    <span style="font-size:11px;color:var(--text3)">· Se carregar 0 linhas: exporte como CSV no Excel</span>
+    <div style="width:1px;height:20px;background:var(--border)"></div>
+    <span style="font-size:14px;color:var(--text2);font-weight:500">Comentários:</span>
+    <label class="up-item" id="lbl-cmt" style="cursor:pointer" title="Opcional — importe um Excel exportado anteriormente para restaurar comentários">
+      <div class="up-dot" id="udot-cmt"></div>
+      <input type="file" id="f-cmt" accept=".xlsx,.xls" style="display:none">
+      <span style="font-size:14px;font-weight:500">💬 Importar comentários</span>
+      <span class="us" id="us-cmt">Opcional</span>
+    </label>
+    <button class="btn-apply" id="btn-ac" disabled onclick="confirmApplyAcomp()">Aplicar</button>
+    <span id="ac-info" style="font-size:13px;color:var(--text3)"></span>
+    <span style="font-size:13px;color:var(--text3)">· Se carregar 0 linhas: exporte como CSV no Excel</span>
   </div>
 
   <!-- Content -->
   <div style="padding:22px 28px" id="acomp-content">
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:14px;color:var(--text3)">
-      <div style="font-size:44px">🚚</div>
-      <div style="font-size:17px;font-weight:600;color:var(--text2)">Nenhum dado carregado</div>
-      <div style="font-size:13px;text-align:center;max-width:400px;line-height:1.6">Carregue a planilha de entregas (mesmo formato da Cobertura) e clique em <strong>Aplicar</strong>.</div>
+      <div style="font-size:46px">🚚</div>
+      <div style="font-size:19px;font-weight:600;color:var(--text2)">Nenhum dado carregado</div>
+      <div style="font-size:15px;text-align:center;max-width:400px;line-height:1.6">Carregue a planilha de entregas (mesmo formato da Cobertura) e clique em <strong>Aplicar</strong>.</div>
     </div>
   </div>
 </div>
@@ -239,7 +261,7 @@ tbody td{padding:7px 11px;color:var(--text2)}
 
 <!-- DEBUG -->
 <div id="dbg-bar">
-  <span style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Diagnóstico:</span>
+  <span style="color:var(--text3);font-size:12px;text-transform:uppercase;letter-spacing:.5px">Diagnóstico:</span>
   <div class="di"><div class="dd" id="dd-n"></div><span class="dl">Notas:</span><span class="dv" id="dv-n">—</span></div>
   <div class="dsep">|</div>
   <div class="di"><div class="dd" id="dd-c"></div><span class="dl">Cobertura:</span><span class="dv" id="dv-c">—</span></div>
@@ -271,7 +293,7 @@ tbody td{padding:7px 11px;color:var(--text2)}
     <button class="dqbtn" id="fat-q90" onclick="setQuick('fat',90)">90d</button>
     <div class="fg"><label>De:</label><input type="date" id="fat-de"></div>
     <div class="fg"><label>Até:</label><input type="date" id="fat-ate"></div>
-    <button class="btn-clr" onclick="clearFilters('fat')">↺ Limpar</button><span id="fat-click-label" style="font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;display:none"></span>
+    <button class="btn-clr" onclick="clearFilters('fat')">↺ Limpar</button><span id="fat-click-label" style="font-size:13px;color:var(--accent);font-family:'DM Mono',monospace;display:none"></span>
   </div>
   <div id="fat-content" style="padding:20px 0"></div>
 </div>
@@ -290,7 +312,7 @@ tbody td{padding:7px 11px;color:var(--text2)}
     <button class="dqbtn" id="ent-q90" onclick="setQuick('ent',90)">90d</button>
     <div class="fg"><label>De:</label><input type="date" id="ent-de"></div>
     <div class="fg"><label>Até:</label><input type="date" id="ent-ate"></div>
-    <button class="btn-clr" onclick="clearFilters('ent')">↺ Limpar</button><button class="btn-clr" id="ent-drill-clr" onclick="resetDrills('ent')" style="display:none;border-color:var(--accent);color:var(--accent)">✕ Drill</button><span id="ent-drill-label" style="font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;display:none"></span>
+    <button class="btn-clr" onclick="clearFilters('ent')">↺ Limpar</button><button class="btn-clr" id="ent-drill-clr" onclick="resetDrills('ent')" style="display:none;border-color:var(--accent);color:var(--accent)">✕ Drill</button><span id="ent-drill-label" style="font-size:13px;color:var(--accent);font-family:'DM Mono',monospace;display:none"></span>
   </div>
   <div id="ent-content" style="padding:20px 0"></div>
 </div>
@@ -308,7 +330,7 @@ tbody td{padding:7px 11px;color:var(--text2)}
     <button class="dqbtn" id="av-q90" onclick="setQuick('av',90)">90d</button>
     <div class="fg"><label>De:</label><input type="date" id="av-de"></div>
     <div class="fg"><label>Até:</label><input type="date" id="av-ate"></div>
-    <button class="btn-clr" onclick="clearFilters('av')">↺ Limpar</button><button class="btn-clr" id="av-drill-clr" onclick="resetDrills('av')" style="display:none;border-color:var(--accent);color:var(--accent)">✕ Drill</button><span id="av-drill-label" style="font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;display:none"></span>
+    <button class="btn-clr" onclick="clearFilters('av')">↺ Limpar</button><button class="btn-clr" id="av-drill-clr" onclick="resetDrills('av')" style="display:none;border-color:var(--accent);color:var(--accent)">✕ Drill</button><span id="av-drill-label" style="font-size:13px;color:var(--accent);font-family:'DM Mono',monospace;display:none"></span>
   </div>
   <div id="av-content" style="padding:20px 0"></div>
 </div>
@@ -833,14 +855,14 @@ function mkBarV(id,labels,datasets,opts={}){
   dChart(id);const ctx=document.getElementById(id);if(!ctx)return;
   S.charts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{
     responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:datasets.length>1,labels:{color:'#8b949e',font:{size:11}}},tooltip:TIP},
+    plugins:{legend:{display:datasets.length>1,labels:{color:'#8b949e',font:{size:13}}},tooltip:TIP},
     onClick: opts.onClickDrill ? (_,els)=>{ if(els.length) opts.onClickDrill(labels[els[0].index]); } : undefined,
     scales:{
-      x:{ticks:{color:'#6e7681',font:{size:10},maxRotation:45,autoSkip:true},grid:{color:'#21262d'},
+      x:{ticks:{color:'#6e7681',font:{size:12},maxRotation:45,autoSkip:true},grid:{color:'#21262d'},
          ...(opts.onClickDrill?{cursor:'pointer'}:{})},
-      y:{ticks:{color:'#6e7681',font:{size:10},callback:v=>opts.curr?fmtAxis(v):fmtN(v)},grid:{color:'#21262d'},
+      y:{ticks:{color:'#6e7681',font:{size:12},callback:v=>opts.curr?fmtAxis(v):fmtN(v)},grid:{color:'#21262d'},
         ...(opts.y2?{}:{})},
-      ...(opts.y2?{y2:{type:'linear',position:'right',min:0,max:100,ticks:{color:'#f0b429',font:{size:10},callback:v=>v+'%'},grid:{drawOnChartArea:false}}}:{})
+      ...(opts.y2?{y2:{type:'linear',position:'right',min:0,max:100,ticks:{color:'#f0b429',font:{size:12},callback:v=>v+'%'},grid:{drawOnChartArea:false}}}:{})
     }
   }});
 }
@@ -850,8 +872,8 @@ function mkBarH(id,labels,datasets,opts={}){
     responsive:true,maintainAspectRatio:false,indexAxis:'y',
     plugins:{legend:{display:false},tooltip:TIP},
     scales:{
-      x:{ticks:{color:'#6e7681',font:{size:10},callback:v=>opts.curr?fmtAxis(v):fmtN(v)},grid:{color:'#21262d'}},
-      y:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}}
+      x:{ticks:{color:'#6e7681',font:{size:12},callback:v=>opts.curr?fmtAxis(v):fmtN(v)},grid:{color:'#21262d'}},
+      y:{ticks:{color:'#6e7681',font:{size:12}},grid:{color:'#21262d'}}
     }
   }});
 }
@@ -861,14 +883,14 @@ function mkDonut(id,labels,data,opts={}){
     data:{labels,datasets:[{data,backgroundColor:COLORS.slice(0,data.length),borderWidth:0,hoverOffset:4}]},
     options:{responsive:true,maintainAspectRatio:false,
       onClick: opts.onClickDrill ? (_,els)=>{ if(els.length) opts.onClickDrill(labels[els[0].index]); } : undefined,
-      plugins:{legend:{position:'right',labels:{color:'#8b949e',font:{size:11},boxWidth:11,padding:9}},tooltip:TIP}}});
+      plugins:{legend:{position:'right',labels:{color:'#8b949e',font:{size:13},boxWidth:11,padding:9}},tooltip:TIP}}});
 }
 function mkLine(id,labels,datasets){
   dChart(id);const ctx=document.getElementById(id);if(!ctx)return;
   S.charts[id]=new Chart(ctx,{type:'line',data:{labels,datasets},options:{
     responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},tooltip:TIP},
-    scales:{x:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}},y:{ticks:{color:'#6e7681',font:{size:10},callback:v=>fmtAxis(v)},grid:{color:'#21262d'}}}
+    scales:{x:{ticks:{color:'#6e7681',font:{size:12}},grid:{color:'#21262d'}},y:{ticks:{color:'#6e7681',font:{size:12},callback:v=>fmtAxis(v)},grid:{color:'#21262d'}}}
   }});
 }
 function mkOtif(id,labels,totals,ontime,pcts){
@@ -880,9 +902,9 @@ function mkOtif(id,labels,totals,ontime,pcts){
   ]},options:{responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{label:c=>{if(c.dataset.label==='% On Time')return ' % On Time: '+c.raw.toFixed(1)+'%';return ' '+c.dataset.label+': '+fmtN(c.raw);}}}},
     scales:{
-      x:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}},
-      y:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'},title:{display:true,text:'Qtd Notas',color:'#6e7681',font:{size:10}}},
-      y2:{type:'linear',position:'right',min:0,max:100,ticks:{color:'#f0b429',font:{size:10},callback:v=>v+'%'},grid:{drawOnChartArea:false},title:{display:true,text:'% On Time',color:'#f0b429',font:{size:10}}}
+      x:{ticks:{color:'#6e7681',font:{size:12}},grid:{color:'#21262d'}},
+      y:{ticks:{color:'#6e7681',font:{size:12}},grid:{color:'#21262d'},title:{display:true,text:'Qtd Notas',color:'#6e7681',font:{size:12}}},
+      y2:{type:'linear',position:'right',min:0,max:100,ticks:{color:'#f0b429',font:{size:12},callback:v=>v+'%'},grid:{drawOnChartArea:false},title:{display:true,text:'% On Time',color:'#f0b429',font:{size:12}}}
     }
   }});
 }
@@ -895,9 +917,9 @@ function mkAvRatio(id,labels,totals,avarias,pcts){
   ]},options:{responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{label:c=>{if(c.dataset.label==='% Avaria')return ' % Avaria: '+c.raw.toFixed(2)+'%';return ' '+c.dataset.label+': '+fmtN(c.raw);}}}},
     scales:{
-      x:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}},
-      y:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'},title:{display:true,text:'Qtd NFs',color:'#6e7681',font:{size:10}}},
-      y2:{type:'linear',position:'right',min:0,ticks:{color:'#f0b429',font:{size:10},callback:v=>v+'%'},grid:{drawOnChartArea:false},title:{display:true,text:'% Avaria',color:'#f0b429',font:{size:10}}}
+      x:{ticks:{color:'#6e7681',font:{size:12}},grid:{color:'#21262d'}},
+      y:{ticks:{color:'#6e7681',font:{size:12}},grid:{color:'#21262d'},title:{display:true,text:'Qtd NFs',color:'#6e7681',font:{size:12}}},
+      y2:{type:'linear',position:'right',min:0,ticks:{color:'#f0b429',font:{size:12},callback:v=>v+'%'},grid:{drawOnChartArea:false},title:{display:true,text:'% Avaria',color:'#f0b429',font:{size:12}}}
     }
   }});
 }
@@ -1000,7 +1022,7 @@ function buildFat(){
     <thead><tr><th>Produto</th><th class="tr">Faturamento</th><th class="tr">Ticket Médio</th></tr></thead>
     <tbody>${byP.map(([p,fat])=>{
       const nfsP=dedup(notas.filter(r=>r.produto===p));
-      return`<tr><td style="font-size:11px;white-space:normal;word-break:break-word;max-width:340px">${p}</td><td class="mono tr" style="white-space:nowrap">${fmtBRL(fat)}</td><td class="mono tr" style="white-space:nowrap">${fmtBRL(nfsP.length?fat/nfsP.length:0)}</td></tr>`;
+      return`<tr><td style="font-size:13px;white-space:normal;word-break:break-word;max-width:340px">${p}</td><td class="mono tr" style="white-space:nowrap">${fmtBRL(fat)}</td><td class="mono tr" style="white-space:nowrap">${fmtBRL(nfsP.length?fat/nfsP.length:0)}</td></tr>`;
     }).join('')}</tbody></table></div>`);
   html+=card('Top Vendedores',`${fmtN(notasV.length)} NFs`,`<div class="tw"><table>
     <thead><tr><th>Vendedor</th><th class="tr">Faturamento</th><th class="tr">Ticket Médio</th></tr></thead>
@@ -1036,7 +1058,7 @@ function buildFat(){
         data:{labels:byC.map(x=>x[0]),datasets:[{data:byC.map(x=>x[1]),backgroundColor:COLORS.slice(0,byC.length),borderWidth:0,hoverOffset:4}]},
         options:{responsive:true,maintainAspectRatio:false,
           onClick:(_,els)=>{if(els[0])setDrill('canal2',c2Keys[els[0].index][0],'fat');},
-          plugins:{legend:{position:'right',labels:{color:'#8b949e',font:{size:11},boxWidth:11,padding:9}},
+          plugins:{legend:{position:'right',labels:{color:'#8b949e',font:{size:13},boxWidth:11,padding:9}},
                    tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}}}});
     }
     // UF — clickable to cross-filter
@@ -1051,8 +1073,8 @@ function buildFat(){
         options:{responsive:true,maintainAspectRatio:false,
           onClick:(_,els)=>{if(els[0])setDrill('uf',byUF[els[0].index][0],'fat');},
           plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}},
-          scales:{x:{ticks:{color:'#6e7681',font:{size:10},maxRotation:45},grid:{color:'#21262d'}},
-                  y:{ticks:{color:'#6e7681',font:{size:10},callback:v=>fmtAxis(v)},grid:{color:'#21262d'}}}}});
+          scales:{x:{ticks:{color:'#6e7681',font:{size:12},maxRotation:45},grid:{color:'#21262d'}},
+                  y:{ticks:{color:'#6e7681',font:{size:12},callback:v=>fmtAxis(v)},grid:{color:'#21262d'}}}}});
     }
     // Transportadora da Cobertura — filtrada pelas NFs do faturamento E pelo período
     if(S.cob){
@@ -1074,8 +1096,8 @@ function buildFat(){
         options:{responsive:true,maintainAspectRatio:false,
           onClick:(_,els)=>{if(els[0])setDrill('fat_transp',byT[els[0].index][0],'fat');},
           plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}},
-          scales:{x:{ticks:{color:'#6e7681',font:{size:10},maxRotation:45},grid:{color:'#21262d'}},
-                  y:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}}}}});
+          scales:{x:{ticks:{color:'#6e7681',font:{size:12},maxRotation:45},grid:{color:'#21262d'}},
+                  y:{ticks:{color:'#6e7681',font:{size:12}},grid:{color:'#21262d'}}}}});
     }
   });
 }
@@ -1187,7 +1209,7 @@ function buildEnt(){
       return`<tr data-search="${[r.nota_fiscal,r.cidade,r.uf,r.transportadora].join(' ').toLowerCase()}">
         <td class="mono">${r.nota_fiscal}</td>
         <td>${r.cidade}</td><td>${r.uf}</td><td>${r.transportadora}</td>
-        <td><span class="tag ${IS_ENTREGUE.has(r.microstatus)?'tg':r.microstatus==='CANCELADO'?'tr2':'tb'}" style="font-size:10px">${r.microstatus}</span></td>
+        <td><span class="tag ${IS_ENTREGUE.has(r.microstatus)?'tg':r.microstatus==='CANCELADO'?'tr2':'tb'}" style="font-size:12px">${r.microstatus}</span></td>
         <td><span class="tag ${r.situacao==='No prazo'?'tg':'ty'}">${r.situacao}</span></td>
         <td class="mono" style="white-space:nowrap">${prevStr}</td>
         <td class="mono" style="color:${diffCol};white-space:nowrap">${diffStr}</td>
@@ -1227,8 +1249,8 @@ function buildEnt(){
       options:{responsive:true,maintainAspectRatio:false,
         onClick:(_,els)=>{if(els[0])setDrill('ent_transp',byT[els[0].index][0],'ent');},
         plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}},
-        scales:{x:{ticks:{color:'#6e7681',font:{size:10},maxRotation:45},grid:{color:'#21262d'}},
-                y:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}}}}});
+        scales:{x:{ticks:{color:'#6e7681',font:{size:12},maxRotation:45},grid:{color:'#21262d'}},
+                y:{ticks:{color:'#6e7681',font:{size:12}},grid:{color:'#21262d'}}}}});
     const byP=gCount(cob,r=>r.praca);
     dChart('ch-ent-praca');
     const ctxP=document.getElementById('ch-ent-praca');
@@ -1238,7 +1260,7 @@ function buildEnt(){
         borderWidth:0,hoverOffset:4}]},
       options:{responsive:true,maintainAspectRatio:false,
         onClick:(_,els)=>{if(els[0])setDrill('ent_praca',byP[els[0].index][0],'ent');},
-        plugins:{legend:{position:'right',labels:{color:'#8b949e',font:{size:11},boxWidth:11,padding:9}},
+        plugins:{legend:{position:'right',labels:{color:'#8b949e',font:{size:13},boxWidth:11,padding:9}},
                  tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}}}});
   });
 }
@@ -1412,7 +1434,7 @@ function buildAv(){
   const paSorted=Object.entries(byPA).sort((a,b)=>b[1].valor-a[1].valor).slice(0,8);
   const maxV=paSorted[0]?paSorted[0][1].valor:1;
   html+=card('Top Produtos Avariados','Por valor',`<div class="prog-wrap">${paSorted.map(([k,v])=>`
-    <div class="prog-item"><div class="prog-lr" style="gap:8px"><span style="font-size:11px;line-height:1.3;word-break:break-word">${k}</span><span style="white-space:nowrap;padding-left:8px">${fmtBRL(v.valor)}</span></div>
+    <div class="prog-item"><div class="prog-lr" style="gap:8px"><span style="font-size:13px;line-height:1.3;word-break:break-word">${k}</span><span style="white-space:nowrap;padding-left:8px">${fmtBRL(v.valor)}</span></div>
     <div class="prog-bar"><div class="prog-fill" style="width:${(v.valor/maxV*100).toFixed(1)}%;background:var(--danger)"></div></div></div>`).join('')}</div>`);
 
   // Tabela abertas
@@ -1424,8 +1446,8 @@ function buildAv(){
     <td class="mono">${r.nf}</td>
     <td>${r.parceiro}</td>
     <td class="mono tr">${fmtBRL(r.valor)}</td>
-    <td style="font-size:11px;white-space:normal;word-break:break-word;max-width:280px">${r.produto}</td>
-    <td><span class="tag ${r.status==='Em negociação'||r.status==='Ag. Pagamento'?'ty':r.status==='Reembolsado'?'tg':'tgr'}" style="font-size:10px">${r.status}</span></td>
+    <td style="font-size:13px;white-space:normal;word-break:break-word;max-width:280px">${r.produto}</td>
+    <td><span class="tag ${r.status==='Em negociação'||r.status==='Ag. Pagamento'?'ty':r.status==='Reembolsado'?'tg':'tgr'}" style="font-size:12px">${r.status}</span></td>
   </tr>`).join('');
   html+=card('Todas as Ocorrências',`${avTodos.length} casos`,`
     <input class="tbl-search" id="${avSrchId}" placeholder="Buscar por ticket, NF, transportadora, produto, status…" oninput="filterTable('${avSrchId}')">
@@ -1452,7 +1474,7 @@ function buildAv(){
         borderWidth:0,hoverOffset:4}]},
       options:{responsive:true,maintainAspectRatio:false,
         onClick:(_,els)=>{if(els[0])setDrill('av_status',bySt[els[0].index][0],'av');},
-        plugins:{legend:{position:'right',labels:{color:'#8b949e',font:{size:11},boxWidth:11,padding:9}},
+        plugins:{legend:{position:'right',labels:{color:'#8b949e',font:{size:13},boxWidth:11,padding:9}},
                  tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}}}});
     // Por transportadora bar
     const byPc=gCount(av,r=>r.parceiro).slice(0,10);
@@ -1465,8 +1487,8 @@ function buildAv(){
       options:{responsive:true,maintainAspectRatio:false,
         onClick:(_,els)=>{if(els[0])setDrill('av_transp',byPc[els[0].index][0],'av');},
         plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{footer:()=>['Clique para filtrar']}}},
-        scales:{x:{ticks:{color:'#6e7681',font:{size:10},maxRotation:45},grid:{color:'#21262d'}},
-                y:{ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}}}}});
+        scales:{x:{ticks:{color:'#6e7681',font:{size:12},maxRotation:45},grid:{color:'#21262d'}},
+                y:{ticks:{color:'#6e7681',font:{size:12}},grid:{color:'#21262d'}}}}});
   });
 }
 
@@ -1474,6 +1496,12 @@ function buildAv(){
 //  INIT
 // ═══════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded',async()=>{
+  // Restore theme preference
+  if(localStorage.getItem('ac_theme')==='light'){
+    document.body.classList.add('light-mode');
+    const btn=document.getElementById('theme-btn');
+    if(btn) btn.textContent='🌙';
+  }
   try{
     const ok=await loadSaved();
     if(ok){
@@ -1495,6 +1523,28 @@ let AC_DATA = null; // normalized rows
 // Para trocar a senha: acesse https://emn178.github.io/online-tools/sha256.html
 // digite a nova senha, copie o hash gerado e substitua o valor de DASH_HASH abaixo.
 const DASH_HASH = '778a9244ba3b1806106b4005404b922b6a31ac9f1fada0564cc2b578843e3573';
+
+function toggleTheme(){
+  const isLight=document.body.classList.toggle('light-mode');
+  document.getElementById('theme-btn').textContent=isLight?'🌙':'☀️';
+  localStorage.setItem('ac_theme',isLight?'light':'dark');
+  // Update chart grid/tick colors for all active charts
+  const gridColor=isLight?'#e5e7eb':'#21262d';
+  const tickColor=isLight?'#6b7280':'#6e7681';
+  Object.values(S.charts).forEach(ch=>{
+    if(!ch||!ch.options) return;
+    ['x','y','y2'].forEach(ax=>{
+      const scale=ch.options.scales?.[ax];
+      if(!scale) return;
+      if(scale.ticks) scale.ticks.color=tickColor;
+      if(scale.grid)  scale.grid.color=gridColor;
+      if(scale.title) scale.title.color=tickColor;
+    });
+    if(ch.options.plugins?.legend?.labels)
+      ch.options.plugins.legend.labels.color=isLight?'#4b5563':'#8b949e';
+    ch.update('none');
+  });
+}
 
 async function sha256(str){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -1536,14 +1586,14 @@ function setHeaderMode(mode){
     sub.textContent='Faturamento · Entrega · Avarias';
     btn.textContent='← Voltar ao Acompanhamento';
     btn.onclick=closeDashboard;
-    btn.style.cssText='background:rgba(59,130,246,.12);border:1px solid var(--accent2);color:var(--accent2);border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s';
+    btn.style.cssText='background:rgba(59,130,246,.12);border:1px solid var(--accent2);color:var(--accent2);border-radius:6px;padding:7px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s';
   } else {
     icon.textContent='🚚'; icon.style.background='var(--accent2)';
     title.textContent='Acompanhamento de Entregas';
     sub.textContent='Notas em Trânsito · Status em Tempo Real';
     btn.textContent='📊 Tela Dashboard';
     btn.onclick=openDashboard;
-    btn.style.cssText='background:rgba(240,180,41,.12);border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s';
+    btn.style.cssText='background:rgba(240,180,41,.12);border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:7px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s';
   }
 }
 
@@ -1579,6 +1629,26 @@ document.getElementById('f-ac').addEventListener('change', e=>{
   document.getElementById('btn-ac')._file=f;
 });
 
+// Comments file handler
+document.getElementById('f-cmt').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  document.getElementById('lbl-cmt').classList.add('loaded');
+  document.getElementById('udot-cmt').style.background='var(--accent3)';
+  document.getElementById('us-cmt').textContent=f.name.length>14?f.name.substring(0,12)+'…':f.name;
+  document.getElementById('btn-ac')._cmtFile=f;
+});
+
+function confirmApplyAcomp(){
+  const btn=document.getElementById('btn-ac');
+  const hasCmt=!!btn._cmtFile;
+  const hasLocalCmt=Object.keys(AC_COMMENTS).length>0;
+  // Only warn if no comments file AND no comments already in localStorage
+  if(!hasCmt && !hasLocalCmt){
+    if(!confirm('Não há arquivo de comentários importado.\n\nComentários salvos no navegador (localStorage) serão mantidos.\n\nDeseja continuar?')) return;
+  }
+  applyAcomp();
+}
+
 async function applyAcomp(){
   const btn=document.getElementById('btn-ac');
   const f=btn._file; if(!f) return;
@@ -1594,6 +1664,30 @@ async function applyAcomp(){
     } else {
       document.getElementById('ac-info').textContent=`✅ ${rawCount.toLocaleString('pt-BR')} linhas lidas · ${filtCount.toLocaleString('pt-BR')} registros ativos (excl. cancelados)`;
       document.getElementById('ac-info').style.color='var(--accent3)';
+    }
+    // Import comments file if provided
+    const cmtFile=btn._cmtFile;
+    if(cmtFile){
+      await new Promise(res=>{
+        const r2=new FileReader();
+        r2.onload=ev=>{
+          try{
+            const wb2=XLSX.read(ev.target.result,{type:'binary'});
+            const ws2=wb2.Sheets[wb2.SheetNames[0]];
+            const rows2=XLSX.utils.sheet_to_json(ws2,{defval:''});
+            let count=0;
+            rows2.forEach(r=>{
+              const nf=Number(r['NF']||r['Nota Fiscal']||r['nota_fiscal']||0);
+              const cmt=(r['Comentário']||r['Comentario']||r['comentario']||r['comment']||'').toString().trim();
+              if(nf>0&&cmt){AC_COMMENTS[nf]=cmt;count++;}
+            });
+            acSaveComments();
+            document.getElementById('ac-info').textContent+=` · ${count} comentário(s) importados`;
+          }catch(ex){console.warn('Erro importando comentários:',ex);}
+          res();
+        };
+        r2.readAsBinaryString(cmtFile);
+      });
     }
     buildAcomp();
   }catch(err){
@@ -1653,6 +1747,128 @@ function normalizeAcomp(rows){
 
 // ── Acompanhamento drill state
 const AC_DRILL = { transp:null, uf:null, regiao:null, canal:null };
+
+// ── Exclusões e comentários (persistidos no localStorage) ──
+const AC_EXC_KEY = 'ac_excluidos_v1';
+const AC_CMT_KEY = 'ac_comentarios_v1';
+
+// Set of NF numbers excluded from data
+const AC_EXCLUIDOS = new Set(JSON.parse(localStorage.getItem(AC_EXC_KEY)||'[]'));
+// Map NF → comment string
+const AC_COMMENTS  = JSON.parse(localStorage.getItem(AC_CMT_KEY)||'{}');
+
+function acSaveExcluidos(){ localStorage.setItem(AC_EXC_KEY, JSON.stringify([...AC_EXCLUIDOS])); }
+
+// ── Export NFs em Atraso → Excel com comentários ──
+function acExportarExcel(){
+  if(!AC_DATA){ alert('Nenhum dado carregado.'); return; }
+  const atrasados=AC_DATA.filter(r=>r.statusAc==='Atraso').sort((a,b)=>(b.diasAtraso||0)-(a.diasAtraso||0));
+  if(!atrasados.length){ alert('Não há notas em atraso para exportar.'); return; }
+
+  const rows=atrasados.map(r=>({
+    'NF':            r.nota_fiscal,
+    'Transportadora':r.transportadora,
+    'Cidade':        r.cidade,
+    'UF':            r.uf,
+    'Prev. Entrega': r.prev_entrega ? r.prev_entrega.toLocaleDateString('pt-BR') : '',
+    'Dias em Atraso':r.diasAtraso||0,
+    'Comentário':    AC_COMMENTS[r.nota_fiscal]||'',
+  }));
+
+  const ws=XLSX.utils.json_to_sheet(rows);
+
+  // Column widths
+  ws['!cols']=[{wch:10},{wch:22},{wch:22},{wch:6},{wch:16},{wch:14},{wch:45}];
+
+  // Header style (bold, background)
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  for(let c=range.s.c;c<=range.e.c;c++){
+    const cell=XLSX.utils.encode_cell({r:0,c});
+    if(ws[cell]){
+      ws[cell].s={font:{bold:true},fill:{fgColor:{rgb:'1C2230'}},alignment:{horizontal:'center'}};
+    }
+  }
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'NFs em Atraso');
+
+  const today=new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  XLSX.writeFile(wb, `NFs_Atraso_${today}.xlsx`);
+}
+
+// ── Import comments from Excel ──
+function acImportarComentarios(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      let count=0;
+      rows.forEach(r=>{
+        // Accept column names: 'NF', 'Nota Fiscal', 'nota_fiscal'
+        const nf=Number(r['NF']||r['Nota Fiscal']||r['nota_fiscal']||0);
+        // Accept: 'Comentário', 'Comentario', 'comentario', 'comment'
+        const cmt=(r['Comentário']||r['Comentario']||r['comentario']||r['comment']||'').toString().trim();
+        if(nf>0 && cmt){ AC_COMMENTS[nf]=cmt; count++; }
+      });
+      acSaveComments();
+      alert(`✅ ${count} comentário(s) importados com sucesso!`);
+      buildAcomp();
+    }catch(err){
+      alert('Erro ao importar comentários: '+err.message);
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+function acSaveComments(){  localStorage.setItem(AC_CMT_KEY, JSON.stringify(AC_COMMENTS)); }
+
+function acExcluirNF(nf){
+  if(!confirm('Excluir NF '+nf+' dos dados desta sessão?\nEla não aparecerá mais em nenhum gráfico ou tabela.\n\nUse "Restaurar excluídas" para desfazer.')) return;
+  AC_EXCLUIDOS.add(Number(nf));
+  acSaveExcluidos();
+  // Remove from AC_DATA in memory
+  AC_DATA = AC_DATA.filter(r=>r.nota_fiscal!==Number(nf));
+  buildAcomp();
+}
+
+function acRestaurarTudo(){
+  if(!confirm('Restaurar todas as '+AC_EXCLUIDOS.size+' NFs excluídas?')) return;
+  AC_EXCLUIDOS.clear();
+  acSaveExcluidos();
+  // Re-normalize from scratch is not possible without the file, but we can reload
+  alert('Recarregue o arquivo de entregas para restaurar as NFs excluídas.');
+  buildAcomp();
+}
+
+function acSaveComment(nf){
+  const inp=document.getElementById('ac-inp-'+nf);
+  if(!inp) return;
+  const txt=inp.value.trim();
+  if(!txt) return;
+  AC_COMMENTS[nf]=txt;
+  acSaveComments();
+  buildAcomp();
+}
+
+function acDeleteComment(nf){
+  delete AC_COMMENTS[nf];
+  acSaveComments();
+  buildAcomp();
+}
+
+function acEditComment(nf){
+  const lbl=document.getElementById('ac-lbl-'+nf);
+  if(!lbl) return;
+  const current=AC_COMMENTS[nf]||'';
+  const cell=lbl.closest('div');
+  cell.innerHTML=`<input id="ac-inp-${nf}" type="text" value="${current.replace(/"/g,'&quot;')}"
+    style="flex:1;background:var(--surface2);border:1px solid var(--accent);color:var(--text);border-radius:5px;padding:4px 8px;font-size:13px;font-family:inherit;outline:none;width:100%"
+    onkeydown="if(event.key==='Enter')acSaveComment(${nf});if(event.key==='Escape')buildAcomp()">
+    <button onclick="acSaveComment(${nf})" style="background:var(--accent3);border:none;color:#000;border-radius:4px;padding:3px 8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">✓</button>
+    <button onclick="buildAcomp()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:4px;padding:3px 8px;font-size:13px;cursor:pointer">✕</button>`;
+  document.getElementById('ac-inp-'+nf)?.focus();
+}
 function acDrill(key, val){
   AC_DRILL[key] = AC_DRILL[key]===val ? null : val;
   buildAcomp();
@@ -1662,7 +1878,7 @@ function buildAcomp(){
   const el=document.getElementById('acomp-content');
   if(!AC_DATA||!AC_DATA.length){el.innerHTML='<p style="color:var(--text3);padding:40px">Sem dados.</p>';return;}
 
-  const ALL=AC_DATA;
+  const ALL=AC_DATA.filter(r=>!AC_EXCLUIDOS.has(r.nota_fiscal));
   const dT=AC_DRILL.transp, dU=AC_DRILL.uf, dR=AC_DRILL.regiao;
 
   // Apply drill filters
@@ -1739,8 +1955,8 @@ function buildAcomp(){
   if(dC)drillParts.push('Canal: '+dC);
   const drillHtml=drillParts.length
     ? `<div style="margin-bottom:12px;display:flex;align-items:center;gap:10px">
-        <span style="font-size:11px;color:var(--accent);font-family:'DM Mono',monospace">● ${drillParts.join(' · ')}</span>
-        <button onclick="AC_DRILL.transp=null;AC_DRILL.uf=null;AC_DRILL.regiao=null;AC_DRILL.canal=null;buildAcomp()" style="font-size:11px;background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);color:var(--accent);border-radius:4px;padding:2px 9px;cursor:pointer">✕ Limpar drill</button>
+        <span style="font-size:13px;color:var(--accent);font-family:'DM Mono',monospace">● ${drillParts.join(' · ')}</span>
+        <button onclick="AC_DRILL.transp=null;AC_DRILL.uf=null;AC_DRILL.regiao=null;AC_DRILL.canal=null;buildAcomp()" style="font-size:13px;background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);color:var(--accent);border-radius:4px;padding:2px 9px;cursor:pointer">✕ Limpar drill</button>
       </div>` : '';
 
   let html=drillHtml;
@@ -1750,7 +1966,7 @@ function buildAcomp(){
   const transpBtns=allTransps.map(t=>{
     const sel=dT===t;
     const col=transpColorMap[t]||'#8b949e';
-    return `<button onclick="acDrill('transp','${t}')" style="padding:4px 12px;font-size:11px;border-radius:20px;border:1px solid ${sel?col:'var(--border)'};background:${sel?col+'33':'var(--surface2)'};color:${sel?col:'var(--text2)'};cursor:pointer;font-family:inherit;font-weight:${sel?600:400};transition:all .2s">${t}</button>`;
+    return `<button onclick="acDrill('transp','${t}')" style="padding:4px 12px;font-size:13px;border-radius:20px;border:1px solid ${sel?col:'var(--border)'};background:${sel?col+'33':'var(--surface2)'};color:${sel?col:'var(--text2)'};cursor:pointer;font-family:inherit;font-weight:${sel?600:400};transition:all .2s">${t}</button>`;
   }).join('');
   // UF select
   const ufOpts=allUFs.map(u=>`<option value="${u}"${dU===u?' selected':''}>${u}</option>`).join('');
@@ -1759,20 +1975,20 @@ function buildAcomp(){
 
   html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-      <span style="font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Transportadoras (${allTransps.length}):</span>
+      <span style="font-size:13px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Transportadoras (${allTransps.length}):</span>
       ${transpBtns}
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <span style="font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px">Região:</span>
-      <select onchange="acDrill('regiao',this.value||(AC_DRILL.regiao=null,buildAcomp(),null))" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-size:12px;font-family:inherit;outline:none">
+      <span style="font-size:13px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px">Região:</span>
+      <select onchange="acDrill('regiao',this.value||(AC_DRILL.regiao=null,buildAcomp(),null))" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-size:14px;font-family:inherit;outline:none">
         <option value="">Todas</option>${regOpts}
       </select>
-      <span style="font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px">UF:</span>
-      <select onchange="acDrill('uf',this.value||(AC_DRILL.uf=null,buildAcomp(),null))" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-size:12px;font-family:inherit;outline:none">
+      <span style="font-size:13px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px">UF:</span>
+      <select onchange="acDrill('uf',this.value||(AC_DRILL.uf=null,buildAcomp(),null))" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-size:14px;font-family:inherit;outline:none">
         <option value="">Todas</option>${ufOpts}
       </select>
-      <span style="font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px">Canal:</span>
-      <select onchange="acDrill('canal',this.value||(AC_DRILL.canal=null,buildAcomp(),null))" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-size:12px;font-family:inherit;outline:none">
+      <span style="font-size:13px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px">Canal:</span>
+      <select onchange="acDrill('canal',this.value||(AC_DRILL.canal=null,buildAcomp(),null))" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-size:14px;font-family:inherit;outline:none">
         <option value="">Todos</option>
         <option value="Comercial"${dC==='Comercial'?' selected':''}>Comercial</option>
         <option value="Ecommerce"${dC==='Ecommerce'?' selected':''}>Ecommerce</option>
@@ -1801,7 +2017,7 @@ function buildAcomp(){
   </div>`;
 
   // ── Row 2: stacked ───────────────────────────────────────────
-  const tListHtml=transpList.slice(0,12).map((t,i)=>`<span onclick="acDrill('transp','${t}')" style="display:flex;align-items:center;gap:4px;font-size:11px;color:${dT&&dT!==t?'var(--text3)':'var(--text2)'};cursor:pointer"><span style="width:9px;height:9px;border-radius:2px;background:${tc(t)};display:inline-block"></span>${t}</span>`).join('');
+  const tListHtml=transpList.slice(0,12).map((t,i)=>`<span onclick="acDrill('transp','${t}')" style="display:flex;align-items:center;gap:4px;font-size:13px;color:${dT&&dT!==t?'var(--text3)':'var(--text2)'};cursor:pointer"><span style="width:9px;height:9px;border-radius:2px;background:${tc(t)};display:inline-block"></span>${t}</span>`).join('');
   html+=`<div class="card" style="margin-bottom:14px">
     <div class="ch"><span class="ct">Transportadoras por Faixa de Dias em Atraso</span><span class="cs">${nAtr} notas em atraso</span></div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">${tListHtml}</div>
@@ -1825,29 +2041,67 @@ function buildAcomp(){
           <td>${r.t}</td>
           <td class="mono tr">${fmtN(r.count)}</td>
           <td class="mono tr">${r.media}</td>
-          <td><div style="display:flex;justify-content:flex-end"><span style="background:${maxCol2};color:#000;border-radius:10px;padding:2px 9px;font-size:11px;font-weight:700;font-family:'DM Mono',monospace">${r.max}</span></div></td>
+          <td><div style="display:flex;justify-content:flex-end"><span style="background:${maxCol2};color:#000;border-radius:10px;padding:2px 9px;font-size:13px;font-weight:700;font-family:'DM Mono',monospace">${r.max}</span></div></td>
         </tr>`;
       }).join('')}</tbody>
     </table></div>
   </div>`;
 
-  // ── Tabela NFs em atraso ──────────────────────────────────────
+  // ── Tabela NFs em atraso (com exclusão e comentários) ───────────
   const atrSrchId='ac-srch';
+  const atrSorted=atrasados.sort((a,b)=>(b.diasAtraso||0)-(a.diasAtraso||0));
+  const atrRows=atrSorted.map(r=>{
+    const nf=r.nota_fiscal;
+    const prevStr=r.prev_entrega?r.prev_entrega.toLocaleDateString('pt-BR'):'—';
+    const d=r.diasAtraso||0;
+    const dCol=d>=15?'var(--danger)':d>=7?'var(--warn)':'var(--accent)';
+    const saved=AC_COMMENTS[nf]||'';
+    const hasComment=saved.trim().length>0;
+    return`<tr data-search="${[nf,r.transportadora,r.cidade,r.uf].join(' ').toLowerCase()}" id="atr-row-${nf}">
+      <td class="mono" style="white-space:nowrap">${nf}</td>
+      <td>${r.transportadora}</td>
+      <td>${r.cidade}</td>
+      <td>${r.uf}</td>
+      <td class="mono" style="white-space:nowrap">${prevStr}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <span style="background:${dCol};color:#000;border-radius:10px;padding:2px 9px;font-size:13px;font-weight:700;font-family:'DM Mono',monospace">${d}d</span>
+      </td>
+      <td style="min-width:220px">
+        <div style="display:flex;align-items:center;gap:5px">
+          ${hasComment
+            ? `<div style="display:flex;align-items:center;gap:5px;width:100%">
+                <span id="ac-lbl-${nf}" style="font-size:13px;color:var(--text2);flex:1;cursor:pointer;padding:3px 6px;border-radius:4px;background:var(--surface2)" title="Clique para editar" onclick="acEditComment(${nf})">${saved}</span>
+                <button onclick="acEditComment(${nf})" title="Editar" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:15px;padding:2px 4px">✏️</button>
+                <button onclick="acDeleteComment(${nf})" title="Apagar comentário" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:15px;padding:2px 4px">🗑️</button>
+               </div>`
+            : `<input id="ac-inp-${nf}" type="text" placeholder="Adicionar comentário…"
+                style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-size:13px;font-family:inherit;outline:none;width:100%"
+                onkeydown="if(event.key==='Enter')acSaveComment(${nf})"
+                onfocus="this.style.borderColor='var(--accent)'"
+                onblur="this.style.borderColor='var(--border)'">
+               <button onclick="acSaveComment(${nf})" title="Salvar" style="background:var(--accent3);border:none;color:#000;border-radius:4px;padding:3px 8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">✓</button>`
+          }
+        </div>
+      </td>
+      <td style="text-align:center;white-space:nowrap">
+        <button onclick="acExcluirNF(${nf})" title="Excluir esta NF dos dados" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--danger);border-radius:5px;padding:3px 9px;font-size:13px;cursor:pointer;font-family:inherit" onmouseover="this.style.background='rgba(239,68,68,.25)'" onmouseout="this.style.background='rgba(239,68,68,.1)'">✕ Excluir</button>
+      </td>
+    </tr>`;
+  }).join('');
+
   html+=`<div class="card">
-    <div class="ch"><span class="ct">NFs em Atraso</span><span class="cs">${nAtr} registros</span></div>
-    <input class="tbl-search" id="${atrSrchId}" placeholder="Buscar por NF, cidade, UF, transportadora…" oninput="filterTable('${atrSrchId}')">
-    <div class="scroll-table" style="max-height:320px"><table>
-      <thead><tr><th>NF</th><th>Transportadora</th><th>Cidade</th><th>UF</th><th>Prev. Entrega</th><th class="tr">Dias Atraso</th></tr></thead>
-      <tbody id="tbl-${atrSrchId}">${atrasados.sort((a,b)=>(b.diasAtraso||0)-(a.diasAtraso||0)).map(r=>{
-        const prevStr=r.prev_entrega?r.prev_entrega.toLocaleDateString('pt-BR'):'—';
-        const d=r.diasAtraso||0;
-        const dCol=d>=15?'var(--danger)':d>=7?'var(--warn)':'var(--accent)';
-        return`<tr data-search="${[r.nota_fiscal,r.transportadora,r.cidade,r.uf].join(' ').toLowerCase()}">
-          <td class="mono">${r.nota_fiscal}</td><td>${r.transportadora}</td><td>${r.cidade}</td><td>${r.uf}</td>
-          <td class="mono">${prevStr}</td>
-          <td><div style="display:flex;justify-content:flex-end"><span style="background:${dCol};color:#000;border-radius:10px;padding:2px 9px;font-size:11px;font-weight:700;font-family:'DM Mono',monospace">${d}d</span></div></td>
-        </tr>`;
-      }).join('')}</tbody>
+    <div class="ch">
+      <span class="ct">NFs em Atraso</span>
+      <span class="cs">${atrSorted.length} registros${AC_EXCLUIDOS.size>0?' · <span style="color:var(--warn)">'+AC_EXCLUIDOS.size+' excluídas da sessão</span>':''}</span>
+      <button onclick="acExportarExcel()" style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:var(--accent3);border-radius:5px;padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" title="Exportar tabela com comentários para Excel">⬇ Exportar Excel</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+      <input class="tbl-search" id="${atrSrchId}" placeholder="Buscar por NF, cidade, UF, transportadora…" oninput="filterTable('${atrSrchId}')" style="flex:1;min-width:200px;margin-bottom:0">
+      ${AC_EXCLUIDOS.size>0?`<button onclick="acRestaurarTudo()" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--accent3);border-radius:5px;padding:5px 12px;font-size:13px;cursor:pointer;font-family:inherit">↺ Restaurar excluídas (${AC_EXCLUIDOS.size})</button>`:''}
+    </div>
+    <div class="scroll-table" style="max-height:380px"><table>
+      <thead><tr><th>NF</th><th>Transportadora</th><th>Cidade</th><th>UF</th><th>Prev. Entrega</th><th class="tr">Dias</th><th>Comentário</th><th></th></tr></thead>
+      <tbody id="tbl-${atrSrchId}">${atrRows}</tbody>
     </table></div>
   </div>`;
 
@@ -1882,7 +2136,7 @@ function buildAcomp(){
           responsive:true,maintainAspectRatio:false,
           onClick:(_,els)=>{if(els[0]!=null&&clickKey)acDrill(clickKey,labelsArr[els[0].index]);},
           plugins:{
-            legend:{position:'right',labels:{color:'#8b949e',font:{size:10},boxWidth:10,padding:8}},
+            legend:{position:'right',labels:{color:'#8b949e',font:{size:15},boxWidth:12,padding:10}},
             tooltip:{...TIP,callbacks:{label:c=>' '+c.label+': '+c.raw+' ('+pctN(c.raw,totalN)+')'}}
           }
         },
@@ -1899,7 +2153,7 @@ function buildAcomp(){
                 if((val/totalN)<0.03) return;
                 const{x,y}=el.tooltipPosition();
                 c.save();
-                c.font='bold 11px Inter,sans-serif';
+                c.font='bold 16px Inter,sans-serif';
                 c.fillStyle='#fff';
                 c.textAlign='center';
                 c.textBaseline='middle';
@@ -1941,12 +2195,12 @@ function buildAcomp(){
           onClick:(_,els)=>{if(els[0]!=null&&clickKey)acDrill(clickKey,labelsArr[els[0].index]);},
           layout:{padding:{top:horizontal?4:22,right:horizontal?36:8,left:4,bottom:4}},
           plugins:{
-            legend:{display:!!datasets,labels:{color:'#8b949e',font:{size:10},boxWidth:9,padding:8}},
+            legend:{display:!!datasets&&!horizontal&&!stacked,labels:{color:'#8b949e',font:{size:15},boxWidth:11,padding:10}},
             tooltip:{...TIP,mode:stacked?'index':'nearest',intersect:!stacked},
           },
           scales:{
-            x:{stacked,ticks:{color:'#6e7681',font:{size:10},maxRotation:horizontal?0:45},grid:{color:'#21262d'}},
-            y:{stacked,ticks:{color:'#6e7681',font:{size:10}},grid:{color:'#21262d'}}
+            x:{stacked,ticks:{color:'#6e7681',font:{size:15},maxRotation:horizontal?0:45},grid:{color:'#21262d'}},
+            y:{stacked,ticks:{color:'#6e7681',font:{size:15}},grid:{color:'#21262d'}}
           }
         },
         plugins:[{
@@ -1962,7 +2216,7 @@ function buildAcomp(){
                 if(!val||val<1) return;
                 const {x,y,base,width,height}=bar.getProps(['x','y','base','width','height'],true);
                 c.save();
-                c.font='bold 11px Inter,sans-serif';
+                c.font='bold 15px Inter,sans-serif';
                 c.fillStyle='#e6edf3';
                 c.textAlign='center';
                 c.textBaseline='middle';
