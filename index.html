@@ -7,6 +7,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 :root{
@@ -191,7 +193,7 @@ tbody td{padding:7px 11px;color:var(--text2)}
 </header>
 
 <!-- ══════ PASSWORD MODAL ══════ -->
-<div id="pwd-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;align-items:center;justify-content:center;align-items:center;justify-content:center">
+<div id="pwd-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;align-items:center;justify-content:center">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px 36px;width:320px;text-align:center">
     <div style="font-size:30px;margin-bottom:12px">🔒</div>
     <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:6px">Tela Dashboard</div>
@@ -235,7 +237,7 @@ tbody td{padding:7px 11px;color:var(--text2)}
     <span style="font-size:13px;color:var(--text3)">· Se carregar 0 linhas: exporte como CSV no Excel</span>
   </div>
 
-  <!-- Content -->
+  <!-- Content: Notas em Atraso -->
   <div style="padding:22px 28px" id="acomp-content">
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:14px;color:var(--text3)">
       <div style="font-size:46px">🚚</div>
@@ -259,6 +261,12 @@ tbody td{padding:7px 11px;color:var(--text2)}
   <span id="up-info">Carregue ao menos uma base · Se Cobertura mostrar 0 linhas, reimporte o arquivo</span>
 </div>
 
+<!-- RELATÓRIO PDF -->
+<div style="background:var(--surface);border-bottom:1px solid var(--border);padding:8px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+  <button onclick="gerarRelatorioPDF()" id="btn-pdf-report" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--danger);border-radius:6px;padding:6px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px" onmouseover="this.style.background='rgba(239,68,68,.2)'" onmouseout="this.style.background='rgba(239,68,68,.1)'">📄 Gerar PDF — Indicadores Mercado Livre (60d)</button>
+  <span id="pdf-report-info" style="font-size:13px;color:var(--text3)"></span>
+</div>
+
 <!-- DEBUG -->
 <div id="dbg-bar">
   <span style="color:var(--text3);font-size:12px;text-transform:uppercase;letter-spacing:.5px">Diagnóstico:</span>
@@ -278,6 +286,9 @@ tbody td{padding:7px 11px;color:var(--text2)}
   <button class="tab-btn active" data-tab="fat" onclick="switchTab('fat')">📦 Faturamento<span class="tab-indicator" id="ti-fat">—</span></button>
   <button class="tab-btn" data-tab="ent" onclick="switchTab('ent')">🚚 Entregas<span class="tab-indicator" id="ti-ent">—</span></button>
   <button class="tab-btn" data-tab="av" onclick="switchTab('av')">⚠️ Avarias<span class="tab-indicator" id="ti-av">—</span></button>
+  <button class="tab-btn" data-tab="frt" onclick="switchTab('frt')">🚛 Frete<span class="tab-indicator" id="ti-frt">—</span></button>
+  <button class="tab-btn" data-tab="sim" onclick="switchTab('sim')">🎯 Simulador de Prazo<span class="tab-indicator" id="ti-sim">—</span></button>
+  <button class="tab-btn" data-tab="aud" onclick="switchTab('aud')" style="border-left:2px dashed var(--border)">🔍 Auditoria Frete</button>
 </div>
 
 <!-- ══════════ TAB: FATURAMENTO ══════════ -->
@@ -335,6 +346,138 @@ tbody td{padding:7px 11px;color:var(--text2)}
   <div id="av-content" style="padding:20px 0"></div>
 </div>
 
+<!-- ══════════ TAB: FRETE ══════════ -->
+<div class="tab-panel" id="tab-frt">
+  <!-- Upload das 3 bases de frete -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;margin:20px 0 0">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--text2);font-weight:500">Bases de Frete:</span>
+      <label class="up-item" id="lbl-frt-sp" style="cursor:pointer">
+        <div class="up-dot" id="udot-frt-sp"></div>
+        <input type="file" id="f-frt-sp" accept=".xlsx,.xls" style="display:none">
+        <span style="font-size:12px;font-weight:500">📄 Frete SP</span>
+        <span class="us" id="us-frt-sp">Aguardando</span>
+      </label>
+      <label class="up-item" id="lbl-frt-mg" style="cursor:pointer">
+        <div class="up-dot" id="udot-frt-mg"></div>
+        <input type="file" id="f-frt-mg" accept=".xlsx,.xls" style="display:none">
+        <span style="font-size:12px;font-weight:500">📄 Frete MG</span>
+        <span class="us" id="us-frt-mg">Aguardando</span>
+      </label>
+      <label class="up-item" id="lbl-frt-nc" style="cursor:pointer">
+        <div class="up-dot" id="udot-frt-nc"></div>
+        <input type="file" id="f-frt-nc" accept=".xlsx,.xls" style="display:none">
+        <span style="font-size:12px;font-weight:500">📄 Frete NC</span>
+        <span class="us" id="us-frt-nc">Aguardando</span>
+      </label>
+      <button class="btn-apply" id="btn-frt" disabled onclick="applyFrete()">Aplicar</button>
+      <span id="frt-info" style="font-size:12px;color:var(--text3)">Planilha com aba "Mestre" (Transportadora, Fatura, NF, Cobrado, Recebido, Motivo)</span>
+    </div>
+  </div>
+
+  <div class="filter-bar" id="fb-frt">
+    <div class="fg"><label>Canal:</label><select id="frt-canal"><option value="">Todos</option></select></div>
+    <div class="fg"><label>Frente:</label><select id="frt-frente"><option value="">Todas</option></select></div>
+    <div class="fg"><label>Transportadora:</label><select id="frt-transp"><option value="">Todas</option></select></div>
+    <div class="fsep"></div>
+    <button class="dqbtn" id="frt-q30" onclick="setQuick('frt',30)">30d</button>
+    <button class="dqbtn" id="frt-q60" onclick="setQuick('frt',60)">60d</button>
+    <button class="dqbtn" id="frt-q90" onclick="setQuick('frt',90)">90d</button>
+    <div class="fg"><label>De:</label><input type="date" id="frt-de"></div>
+    <div class="fg"><label>Até:</label><input type="date" id="frt-ate"></div>
+    <button class="btn-clr" onclick="clearFilters('frt')">↺ Limpar</button>
+  </div>
+  <div id="frt-content" style="padding:20px 0"></div>
+</div>
+
+<!-- ══════════ TAB: SIMULADOR DE PRAZO ══════════ -->
+<div class="tab-panel" id="tab-sim">
+  <div class="filter-bar" id="fb-sim">
+    <div class="fg"><label>Região:</label><select id="sim-regiao"><option value="">Todas</option></select></div>
+    <div class="fg"><label>UF:</label><select id="sim-uf"><option value="">Todas</option></select></div>
+    <div class="fg"><label>Transportadora:</label><select id="sim-transp"><option value="">Todas</option></select></div>
+    <div class="fg"><label>Canal:</label><select id="sim-canal"><option value="">Todos</option></select></div>
+    <div class="fg"><label>Praça:</label><select id="sim-praca"><option value="">Todas</option><option value="Capital">Capital</option><option value="Interior">Interior</option></select></div>
+    <div class="fsep"></div>
+    <button class="dqbtn" id="sim-q30" onclick="setQuick('sim',30)">30d</button>
+    <button class="dqbtn" id="sim-q60" onclick="setQuick('sim',60)">60d</button>
+    <button class="dqbtn" id="sim-q90" onclick="setQuick('sim',90)">90d</button>
+    <div class="fg"><label>De:</label><input type="date" id="sim-de"></div>
+    <div class="fg"><label>Até:</label><input type="date" id="sim-ate"></div>
+    <button class="btn-clr" onclick="clearFilters('sim')">↺ Limpar</button>
+  </div>
+
+  <!-- Campo de ajuste de prazo -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;margin:14px 0;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:14px;font-weight:600;color:var(--text)">🎯 Ajuste de Prazo:</span>
+      <button onclick="simAjustarDias(-1)" style="width:30px;height:30px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:16px;cursor:pointer;font-family:inherit">−</button>
+      <input type="number" id="sim-dias" value="0" step="1" style="width:70px;text-align:center;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 4px;font-size:16px;font-weight:700;font-family:'DM Mono',monospace">
+      <button onclick="simAjustarDias(1)" style="width:30px;height:30px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:16px;cursor:pointer;font-family:inherit">+</button>
+      <span style="font-size:13px;color:var(--text3)">dias na Previsão de Entrega</span>
+    </div>
+    <div style="width:1px;height:24px;background:var(--border)"></div>
+    <button onclick="buildSimulador()" style="background:var(--accent);border:none;color:#000;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">▶ Simular</button>
+    <span id="sim-info" style="font-size:13px;color:var(--text3)">Valores negativos = prazo mais apertado · Positivos = prazo mais folgado</span>
+  </div>
+
+  <div id="sim-content" style="padding:6px 0"></div>
+</div>
+
+<!-- ══════════ TAB: AUDITORIA FRETE (temporária) ══════════ -->
+<div class="tab-panel" id="tab-aud">
+  <div style="background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.25);border-radius:var(--r);padding:14px 18px;margin:20px 0">
+    <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:4px">🔍 Ferramenta de Auditoria — Notas sem Frete</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.5">
+      Carregue a <strong>Base_Notas completa</strong> e as bases de <strong>Frete</strong> (SP, MG, NC) abaixo.
+      A ferramenta cruza todas as NFs de 2026 da Base_Notas com as NFs presentes nas bases de Frete e gera um Excel
+      apenas com as notas <strong>sem</strong> correspondência — mantendo todas as colunas originais da Base_Notas.
+      Nada é enviado para fora do seu navegador.
+    </div>
+  </div>
+
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+      <span style="font-size:12px;color:var(--text2);font-weight:500">1. Base_Notas:</span>
+      <label class="up-item" id="lbl-aud-notas" style="cursor:pointer">
+        <div class="up-dot" id="udot-aud-notas"></div>
+        <input type="file" id="f-aud-notas" accept=".xlsx,.xls" style="display:none">
+        <span style="font-size:12px;font-weight:500">📋 Base_Notas (completa)</span>
+        <span class="us" id="us-aud-notas">Aguardando</span>
+      </label>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+      <span style="font-size:12px;color:var(--text2);font-weight:500">2. Bases de Frete:</span>
+      <label class="up-item" id="lbl-aud-sp" style="cursor:pointer">
+        <div class="up-dot" id="udot-aud-sp"></div>
+        <input type="file" id="f-aud-sp" accept=".xlsx,.xls" style="display:none">
+        <span style="font-size:12px;font-weight:500">📄 Frete SP</span>
+        <span class="us" id="us-aud-sp">Opcional</span>
+      </label>
+      <label class="up-item" id="lbl-aud-mg" style="cursor:pointer">
+        <div class="up-dot" id="udot-aud-mg"></div>
+        <input type="file" id="f-aud-mg" accept=".xlsx,.xls" style="display:none">
+        <span style="font-size:12px;font-weight:500">📄 Frete MG</span>
+        <span class="us" id="us-aud-mg">Opcional</span>
+      </label>
+      <label class="up-item" id="lbl-aud-nc" style="cursor:pointer">
+        <div class="up-dot" id="udot-aud-nc"></div>
+        <input type="file" id="f-aud-nc" accept=".xlsx,.xls" style="display:none">
+        <span style="font-size:12px;font-weight:500">📄 Frete NC</span>
+        <span class="us" id="us-aud-nc">Opcional</span>
+      </label>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--text2);font-weight:500">3. Ano de referência:</span>
+      <input type="number" id="aud-ano" value="2026" style="width:80px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;font-family:inherit">
+      <button class="btn-apply" id="btn-aud" disabled onclick="runAuditoria()">🔎 Processar e Gerar Excel</button>
+      <span id="aud-info" style="font-size:12px;color:var(--text3)"></span>
+    </div>
+  </div>
+
+  <div id="aud-content"></div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════
 //  CONSTANTS
@@ -355,16 +498,6 @@ function acCanalGroup(v){
 }
 
 // Limpa nome de transportadora: Title Case + remove sufixos legais/operacionais
-function cleanTransp(name){
-  if(!name) return '';
-  const noise=/\b(LTDA\.?|S\.?A\.?|ME\.?|EIRELI\.?|EPP\.?|LIMITADA|TRANSPORTES?|TRANSPORTADORA|ARMAZENAGEM|URGENTES?|EXPRESSO|CARGAS?)\b/gi;
-  const dash =/\s*[-–]\s*(MG|SP|BA|RJ|PR|RS|SC|GO|MT|MS|DF|CE|PE|AM|PA|IP|CAP|INT)\b.*/gi;
-  let s = name.replace(dash,'').replace(noise,'').replace(/\s+/g,' ').trim();
-  // E isolado no meio (ex "RDMAX E LOGISTICA") → remove
-  s = s.replace(/\bE\b/gi,'').replace(/\s+/g,' ').trim();
-  // Title case
-  return s ? s.toLowerCase().replace(/(?:^|\s)\S/g,c=>c.toUpperCase()) : name;
-}
 
 // Palavras a remover do nome da transportadora
 const TRANSP_REMOVE = new Set(['LTDA','LTDA.','EIRELI','EIRELI.','ME','EPP','S/A','SA','S.A','S.A.',
@@ -446,7 +579,7 @@ function drillLabel(key){ return DRILL[key] ? ` [${DRILL[key]}]` : ''; }
 // ═══════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════
-const S = { notas:null, cob:null, av:null, charts:{} };
+const S = { notas:null, cob:null, av:null, frete:null, charts:{} };
 
 
 // ═══════════════════════════════════════════════════
@@ -469,7 +602,7 @@ function parseDate(s){
   if(!s)return null;
   if(s instanceof Date)return isNaN(s)?null:s;
   if(typeof s==='number'){const d=new Date(Math.round((s-25569)*86400*1000));return isNaN(d)?null:d;}
-  const m=s.match(/(\d+)\s+de\s+(\w+)\s+de\s+(\d{4})/i);
+  const m=s.match(/(\d+)\s+de\s+([a-zà-úçÀ-ÚÇ]+)\s+de\s+(\d{4})/i);
   if(m){const k=m[2].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(MESES[k]!==undefined)return new Date(+m[3],MESES[k],+m[1]);}
   const m2=s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
   if(m2)return new Date(+m2[3],+m2[2]-1,+m2[1]);
@@ -604,6 +737,30 @@ function normAv(rows){
   });
 }
 
+// ── Motivos de frete excluídos da soma de Cobrado (por solicitação do negócio) ──
+const FRETE_MOTIVO_EXC = new Set([
+  'ARMAZENAGEM','BRINDE','GARANTIA','REENTREGA','REVERSA',
+  'REDESPACHO','PROJETOS ESPECIAIS','REPOSIÇÃO','REPOSICAO','RETORNO'
+]);
+
+function normFrete(rows, frente){
+  return rows.map(r=>{
+    const motivoRaw=(rGet(r,'Motivo')||'').toString().trim();
+    const motivoNorm=motivoRaw.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    return{
+      frente,
+      transportadora: cleanTransp((rGet(r,'Transportadora')||'').toString().trim()),
+      fatura:   (rGet(r,'Fatura')||'').toString().trim(),
+      nf:       Number(rGet(r,'NF','nf')||0),
+      emissao:  (()=>{ let v=rGet(r,'Data de Emissão','Data de Emissao'); if(!v)return null; if(v instanceof Date)return isNaN(v)?null:v; if(typeof v==='number')return new Date(Math.round((v-25569)*86400*1000)); return parseDate(v.toString()); })(),
+      cobrado:  parseFloat(rGet(r,'Cobrado')||0)||0,
+      recebido: parseFloat(rGet(r,'Recebido','Recebido ')||0)||0,
+      motivo:   motivoRaw,
+      excluido: FRETE_MOTIVO_EXC.has(motivoNorm),
+    };
+  });
+}
+
 // ═══════════════════════════════════════════════════
 //  PERSISTENCE
 // ═══════════════════════════════════════════════════
@@ -626,7 +783,7 @@ async function saveAll(meta){
 }
 async function loadSaved(){
   const meta=await dbGet('meta'); if(!meta)return false;
-  const rn=await dbGet('notas'),rc=await dbGet('cob'),ra=await dbGet('av');
+  const rn=await dbGet('notas'),rc=await dbGet('cob'),ra=await dbGet('av'),rf=await dbGet('frete');
   if(rn)S.notas=deserN(rn);
   if(rc){
     S.cob=deserC(rc);
@@ -637,8 +794,9 @@ async function loadSaved(){
     }
   }
   if(ra)S.av=deserA(ra);
+  if(rf)S.frete=rf.map(r=>({...r, emissao:r.emissao?new Date(r.emissao):null}));
   if(meta.lu)document.getElementById('last-upd').textContent='Atualizado: '+meta.lu;
-  return!!(S.notas||S.cob||S.av);
+  return!!(S.notas||S.cob||S.av||S.frete);
 }
 
 // ═══════════════════════════════════════════════════
@@ -721,6 +879,59 @@ document.getElementById('btn-apply').addEventListener('click',async()=>{
   }catch(err){document.getElementById('up-info').textContent='❌ Erro: '+err.message;console.error(err);}
   btn.textContent='Aplicar Dados';btn.disabled=false;
 });
+
+// ── Upload das 3 bases de Frete ──
+const pendingFrete={sp:null,mg:null,nc:null};
+function setupFreteUp(fid,lid,uid,key){
+  const inp=document.getElementById(fid),lbl=document.getElementById(lid),st=document.getElementById(uid);
+  inp.addEventListener('change',e=>{
+    const f=e.target.files[0];if(!f)return;
+    pendingFrete[key]=f;lbl.classList.add('loaded');
+    st.textContent=f.name.length>14?f.name.substring(0,12)+'…':f.name;
+    document.getElementById('btn-frt').disabled=false;
+  });
+}
+setupFreteUp('f-frt-sp','lbl-frt-sp','us-frt-sp','sp');
+setupFreteUp('f-frt-mg','lbl-frt-mg','us-frt-mg','mg');
+setupFreteUp('f-frt-nc','lbl-frt-nc','us-frt-nc','nc');
+
+function readFreteSheet(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      try{
+        const wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
+        // Procura a aba "Mestre" (case-insensitive); senão usa a primeira
+        const sheetName=wb.SheetNames.find(n=>normStr(n)==='mestre')||wb.SheetNames[0];
+        const ws=repairRef(wb.Sheets[sheetName]);
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:null});
+        res(rows);
+      }catch(err){rej(err);}
+    };
+    r.onerror=rej; r.readAsBinaryString(file);
+  });
+}
+
+async function applyFrete(){
+  const btn=document.getElementById('btn-frt');
+  btn.textContent='Processando…'; btn.disabled=true;
+  try{
+    let all=[];
+    if(pendingFrete.sp){ const rows=await readFreteSheet(pendingFrete.sp); all=all.concat(normFrete(rows,'SP')); }
+    if(pendingFrete.mg){ const rows=await readFreteSheet(pendingFrete.mg); all=all.concat(normFrete(rows,'MG')); }
+    if(pendingFrete.nc){ const rows=await readFreteSheet(pendingFrete.nc); all=all.concat(normFrete(rows,'NC')); }
+    S.frete=all;
+    await dbSet('frete', serRows(S.frete));
+    document.getElementById('frt-info').textContent=`✅ ${S.frete.length.toLocaleString('pt-BR')} registros carregados (SP+MG+NC)`;
+    document.getElementById('frt-info').style.color='var(--accent3)';
+    buildActive();
+  }catch(err){
+    document.getElementById('frt-info').textContent='❌ Erro: '+err.message;
+    document.getElementById('frt-info').style.color='var(--danger)';
+    console.error(err);
+  }
+  btn.textContent='Aplicar'; btn.disabled=false;
+}
 
 // ═══════════════════════════════════════════════════
 //  DEBUG
@@ -806,6 +1017,8 @@ function buildActive(){
   if(activeTab==='fat'){initQuick('fat');buildFat();}
   else if(activeTab==='ent'){initQuick('ent');buildEnt();}
   else if(activeTab==='av'){initQuick('av');buildAv();}
+  else if(activeTab==='frt'){initQuick('frt');buildFrete();}
+  else if(activeTab==='sim'){initQuick('sim');buildSimulador();}
 }
 
 // ═══════════════════════════════════════════════════
@@ -828,6 +1041,8 @@ function clearFilters(tab){
     fat:['fat-canal','fat-transp','fat-uf','fat-regiao','fat-de','fat-ate'],
     ent:['ent-canal','ent-transp','ent-uf','ent-regiao','ent-praca','ent-de','ent-ate'],
     av: ['av-canal','av-transp','av-tipo','av-status','av-de','av-ate'],
+    frt:['frt-canal','frt-frente','frt-transp','frt-de','frt-ate'],
+    sim:['sim-regiao','sim-uf','sim-transp','sim-canal','sim-praca','sim-de','sim-ate'],
   };
   // Reset quick-button selection and re-apply 60d
   QUICK_ACTIVE[tab]=null;
@@ -844,6 +1059,12 @@ function clearFilters(tab){
 });
 ['av-canal','av-transp','av-tipo','av-status','av-de','av-ate'].forEach(id=>{
   document.getElementById(id)?.addEventListener('change',()=>{if(activeTab==='av')buildAv();});
+});
+['frt-canal','frt-frente','frt-transp','frt-de','frt-ate'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change',()=>{if(activeTab==='frt')buildFrete();});
+});
+['sim-regiao','sim-uf','sim-transp','sim-canal','sim-praca','sim-de','sim-ate'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change',()=>{if(activeTab==='sim')buildSimulador();});
 });
 
 // ═══════════════════════════════════════════════════
@@ -1166,14 +1387,16 @@ function buildEnt(){
   ]);
 
   // OTIF combo + OT por transportadora
-  // Transportadora OT: excluir cancelados do denominador
+  // On Time real: Data Entrega <= Previsão de Entrega (mesma lógica do Simulador de Prazo)
+  // Considera apenas notas JÁ ENTREGUES (com data_entrega e prev_entrega preenchidas), excl. canceladas
   const transpOT={};
   cob.forEach(r=>{
     if(r.microstatus==='CANCELADO') return;
+    if(!r.data_entrega || !r.prev_entrega) return; // só entregues com previsão válida
     const t=r.transportadora||'N/A';
     if(!transpOT[t])transpOT[t]={total:0,ot:0};
     transpOT[t].total++;
-    if(IS_ONTIME.has(r.performance)) transpOT[t].ot++;
+    if(r.data_entrega<=r.prev_entrega) transpOT[t].ot++;
   });
   const otRows=Object.entries(transpOT).map(([t,v])=>({t,total:v.total,ot:v.ot,pct:pctV(v.ot,v.total)})).sort((a,b)=>b.pct-a.pct);
 
@@ -1225,14 +1448,16 @@ function buildEnt(){
   el.innerHTML=html;
 
   requestAnimationFrame(()=>{
-    // OTIF: denominador = todas as NFs não canceladas; numerador = NFs no prazo
+    // OTIF: On Time real via comparação de datas (mesma lógica do Simulador de Prazo)
+    // Denominador = NFs já entregues com previsão válida, excl. canceladas
     const byMC={};
     cob.forEach(r=>{
-      if(r.microstatus==='CANCELADO') return; // excluir cancelados do denominador
+      if(r.microstatus==='CANCELADO') return;
+      if(!r.data_entrega || !r.prev_entrega) return;
       const k=toMK(r.data_criacao);if(!k)return;
       if(!byMC[k])byMC[k]={total:0,ot:0};
       byMC[k].total++;
-      if(IS_ONTIME.has(r.performance)) byMC[k].ot++;
+      if(r.data_entrega<=r.prev_entrega) byMC[k].ot++;
     });
     const mks=Object.keys(byMC).sort();
     mkOtif('ch-ent-otif',mks.map(mkLbl),mks.map(k=>byMC[k].total),mks.map(k=>byMC[k].ot),mks.map(k=>pctV(byMC[k].ot,byMC[k].total)));
@@ -1492,6 +1717,997 @@ function buildAv(){
   });
 }
 
+
+// ═══════════════════════════════════════════════════
+//  TAB: FRETE  (3 bases: SP, MG, NC + join com Notas)
+// ═══════════════════════════════════════════════════
+function buildFrete(){
+  const el=document.getElementById('frt-content');
+  if(!S.frete||!S.frete.length){
+    el.innerHTML='<p style="color:var(--text3);padding:40px 0">Carregue ao menos uma base de Frete (SP, MG ou NC) e clique em Aplicar.</p>';
+    return;
+  }
+
+  // Lookups a partir da Base_Notas via chave composta NF+Data (evita ligar o frete a uma
+  // NF de outro CNPJ que reiniciou a numeração na mesma data — chave segura entre SP/MG/NC)
+  const dayKeyOf=d=>d&&!isNaN(d)?d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'):null;
+  const chaveToCanal={}, chaveToUF={}, chaveToValor={};
+  if(S.notas){
+    const seen=new Set();
+    S.notas.forEach(r=>{
+      const nf=r.num_fiscal||r.numero_nota;
+      const dk=dayKeyOf(r.data_emissao);
+      if(nf>0 && dk){
+        const key=nf+'|'+dk;
+        if(!seen.has(key)){
+          seen.add(key);
+          chaveToCanal[key]=r.canal2;
+          chaveToUF[key]=r.uf_destino;
+          chaveToValor[key]=r.valor_nota;
+        }
+      }
+    });
+  }
+  const keyOf=r=>{ const dk=dayKeyOf(r.emissao); return dk?r.nf+'|'+dk:null; };
+  const canalOf=r=>{ const k=keyOf(r); return k?chaveToCanal[k]:undefined; };
+  const ufOf=r=>{ const k=keyOf(r); return k?chaveToUF[k]:undefined; };
+  const regiaoOf=r=>{ const uf=ufOf(r); return uf?(UF_TO_REGIAO[uf]||null):null; };
+
+  // Populate filters
+  const frentes=[...new Set(S.frete.map(r=>r.frente))].sort();
+  const transps=[...new Set(S.frete.map(r=>r.transportadora))].filter(Boolean).sort();
+  const canaisPresentes=[...new Set(S.frete.map(canalOf))].filter(Boolean).sort();
+  fillSel('frt-frente', frentes, 'Todas');
+  fillSel('frt-transp', transps, 'Todas');
+  fillSel('frt-canal', canaisPresentes.map(c=>({v:c,l:CANAL2_LBL[c]||c})), 'Todos');
+
+  const ff=gv('frt-frente'), ft=gv('frt-transp'), fc=gv('frt-canal'), fde=gv('frt-de'), fate=gv('frt-ate');
+
+  const frete=S.frete.filter(r=>{
+    if(ff && r.frente!==ff) return false;
+    if(ft && r.transportadora!==ft) return false;
+    if(fc && canalOf(r)!==fc) return false;
+    if(!inRange(r.emissao,fde,fate)) return false;
+    return true;
+  });
+
+  document.getElementById('ti-frt').textContent=fmtN(frete.length)+' registros';
+
+  // KPIs gerais
+  const freteValido=frete.filter(r=>!r.excluido); // exclui motivos da lista
+  const totalCobrado=freteValido.reduce((s,r)=>s+r.cobrado,0);
+  const totalRecebido=freteValido.reduce((s,r)=>s+r.recebido,0);
+
+  // Faturamento: soma valor_nota das chaves NF+Data únicas presentes no frete filtrado
+  const chavesUnicas=new Set(frete.map(keyOf).filter(Boolean));
+  let faturamentoTotal=0, semMatch=0;
+  chavesUnicas.forEach(k=>{
+    if(chaveToValor[k]!=null) faturamentoTotal+=chaveToValor[k];
+    else semMatch++;
+  });
+  const pctCdF=faturamentoTotal? (totalCobrado/faturamentoTotal*100) : 0;
+
+  let html='';
+  html+=kRow([
+    {l:'Faturamento (NF+Data c/ Frete)', v:fmtBRL(faturamentoTotal), s:`${fmtN(chavesUnicas.size)} NFs únicas · ${fmtN(semMatch)} sem match`, c:'var(--accent)'},
+    {l:'Frete Cobrado',  v:fmtBRL(totalCobrado),  s:'Exclui motivos isentos', c:'var(--danger)'},
+    {l:'Frete Recebido', v:fmtBRL(totalRecebido), s:'Cobrado do cliente',     c:'var(--accent2)'},
+    {l:'% Custo de Frete (CdF)', v:pctCdF.toFixed(2)+'%', s:'Cobrado ÷ Faturamento', c:'var(--warn)'},
+  ]);
+
+  // ── Gráfico principal + Tabela %CdF por Transportadora lado a lado ──────
+  // Calcula faturamento e frete por transportadora (mesma chave NF+Data)
+  const porTransp={}; // t -> {cobrado:0, chaves:Set}
+  freteValido.forEach(r=>{
+    const t=r.transportadora||'(sem transportadora)';
+    if(!porTransp[t]) porTransp[t]={cobrado:0,chaves:new Set()};
+    porTransp[t].cobrado+=r.cobrado;
+    const k=keyOf(r); if(k) porTransp[t].chaves.add(k);
+  });
+  const cdfRows=Object.entries(porTransp).map(([t,v])=>{
+    let fat=0; v.chaves.forEach(k=>{ if(chaveToValor[k]!=null) fat+=chaveToValor[k]; });
+    const pct=fat? (v.cobrado/fat*100) : 0;
+    return{t, cobrado:v.cobrado, faturamento:fat, pct};
+  }).sort((a,b)=>b.pct-a.pct);
+
+  html+=`<div class="g21">`;
+  html+=card('Faturamento × Frete × % CdF','Faturamento mensal das NFs, frete cobrado (excl. motivos isentos) e % de custo de frete',
+    `<div class="cwrap" style="height:340px"><canvas id="ch-frt-main"></canvas></div>`);
+  html+=card('% CdF – Por Transportadora','Cobrado ÷ Faturamento',`<div class="tw"><table>
+    <thead><tr><th>Transportadora</th><th class="tr">% CdF</th></tr></thead>
+    <tbody>${cdfRows.map(r=>{
+      const col=r.pct<=8?'#10b981':r.pct<=12?'#f0b429':'#ef4444';
+      return`<tr><td>${r.t}</td><td>${pctBar(r.pct,col)}</td></tr>`;
+    }).join('')}</tbody>
+  </table></div>`);
+  html+=`</div>`;
+
+  // ── Frete Cobrado por Transportadora + % Frete por Região ──
+  html+=`<div class="g2">${chCard('Frete Cobrado por Transportadora','Top 12','ch-frt-transp',240)}${chCard('% Frete por Região','Cobrado por região de destino','ch-frt-regiao',240)}</div>`;
+
+  // ── Registros excluídos (motivos isentos) ──
+  const excluidos=frete.filter(r=>r.excluido);
+  if(excluidos.length){
+    const byMotivoExc=gCount(excluidos,r=>r.motivo);
+    html+=card('Registros Excluídos da Soma de Frete',`${excluidos.length} registros · ${fmtBRL(excluidos.reduce((s,r)=>s+r.cobrado,0))} não contabilizados`,
+      `<div style="display:flex;flex-wrap:wrap;gap:8px">${byMotivoExc.map(([m,c])=>`<span class="tag tgr" style="font-size:12px">${m}: ${c}</span>`).join('')}</div>`);
+  }
+
+  el.innerHTML=html;
+
+  requestAnimationFrame(()=>{
+    // ── Gráfico principal: Faturamento × Frete × %CdF por mês ──
+    const byMes={}; // mk -> {chaves:Set, cobrado:0}
+    freteValido.forEach(r=>{
+      const k=toMK(r.emissao); if(!k) return;
+      if(!byMes[k]) byMes[k]={chaves:new Set(),cobrado:0};
+      byMes[k].cobrado+=r.cobrado;
+      const fk=keyOf(r);
+      if(fk) byMes[k].chaves.add(fk);
+    });
+    const mks=Object.keys(byMes).sort();
+    const fatM=mks.map(k=>{
+      let sum=0;
+      byMes[k].chaves.forEach(ck=>{ if(chaveToValor[ck]!=null) sum+=chaveToValor[ck]; });
+      return sum;
+    });
+    const freteM=mks.map(k=>byMes[k].cobrado);
+    const pctM=mks.map((k,i)=>fatM[i]?(freteM[i]/fatM[i]*100):0);
+
+    dChart('ch-frt-main');
+    const ctx=document.getElementById('ch-frt-main');
+    if(ctx) S.charts['ch-frt-main']=new Chart(ctx,{
+      data:{
+        labels:mks.map(mkLbl),
+        datasets:[
+          {type:'bar',label:'Faturamento Total',data:fatM,backgroundColor:'#f0b429cc',borderColor:'#f0b429',borderWidth:1,yAxisID:'y',order:2},
+          {type:'bar',label:'Frete Total',data:freteM,backgroundColor:'#3b82f6cc',borderColor:'#3b82f6',borderWidth:1,yAxisID:'y',order:2},
+          {type:'line',label:'% CdF',data:pctM,borderColor:'#f97316',backgroundColor:'#f97316',borderWidth:2,pointRadius:4,pointBackgroundColor:'#f97316',tension:.3,yAxisID:'y2',order:1},
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'top',labels:{color:'#8b949e',font:{size:13},boxWidth:11,padding:10}},
+          tooltip:{...TIP,callbacks:{label:c=>{
+            if(c.dataset.label==='% CdF') return ' % CdF: '+c.raw.toFixed(2)+'%';
+            return ' '+c.dataset.label+': '+fmtBRL(c.raw);
+          }}}
+        },
+        scales:{
+          x:{ticks:{color:'#6e7681',font:{size:13}},grid:{color:'#21262d'}},
+          y:{ticks:{color:'#6e7681',font:{size:13},callback:v=>fmtAxis(v)},grid:{color:'#21262d'},title:{display:true,text:'Valores de Frete e Faturamento',color:'#6e7681',font:{size:12}}},
+          y2:{type:'linear',position:'right',min:0,ticks:{color:'#f97316',font:{size:13},callback:v=>v+'%'},grid:{drawOnChartArea:false},title:{display:true,text:'% CdF',color:'#f97316',font:{size:12}}}
+        }
+      },
+      plugins:[{
+        id:'frtLbl',
+        afterDatasetsDraw(chart){
+          const c=chart.ctx;
+          const lineMeta=chart.getDatasetMeta(2);
+          lineMeta.data.forEach((pt,i)=>{
+            const val=pctM[i]; if(val==null) return;
+            const{x,y}=pt.getProps(['x','y'],true);
+            c.save();
+            c.font='bold 13px Inter,sans-serif';
+            c.fillStyle='#f97316';
+            c.textAlign='center';
+            c.textBaseline='bottom';
+            c.fillText(val.toFixed(2)+'%', x, y-10);
+            c.restore();
+          });
+        }
+      }]
+    });
+
+    // ── Frete Cobrado por Transportadora ──
+    const byTransp=gSum(freteValido,r=>r.transportadora,r=>r.cobrado).slice(0,12);
+    mkBarH('ch-frt-transp', byTransp.map(x=>x[0]), [{label:'Frete',data:byTransp.map(x=>x[1]),backgroundColor:'#3b82f699',borderColor:'#3b82f6',borderWidth:1}], {curr:true});
+
+    // ── % Frete por Região ──
+    const cobradoPorRegiao={};
+    freteValido.forEach(r=>{
+      const reg=regiaoOf(r); if(!reg) return;
+      cobradoPorRegiao[reg]=(cobradoPorRegiao[reg]||0)+r.cobrado;
+    });
+    const totalRegCobrado=Object.values(cobradoPorRegiao).reduce((a,b)=>a+b,0);
+    const regLabels=REGIAO_ORDER.filter(r=>cobradoPorRegiao[r]>0);
+    const regData=regLabels.map(r=>totalRegCobrado?(cobradoPorRegiao[r]/totalRegCobrado*100):0);
+
+    dChart('ch-frt-regiao');
+    const ctxReg=document.getElementById('ch-frt-regiao');
+    if(ctxReg) S.charts['ch-frt-regiao']=new Chart(ctxReg,{type:'bar',
+      data:{labels:regLabels,datasets:[{label:'% Frete',data:regData,backgroundColor:'#8b5cf699',borderColor:'#8b5cf6',borderWidth:1,borderRadius:3}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{label:c=>' '+c.raw.toFixed(1)+'% do frete · '+fmtBRL(cobradoPorRegiao[c.label])}}},
+        scales:{x:{ticks:{color:'#6e7681',font:{size:13}},grid:{color:'#21262d'}},
+                y:{ticks:{color:'#6e7681',font:{size:13},callback:v=>v+'%'},grid:{color:'#21262d'}}}},
+      plugins:[{
+        id:'regLbl',
+        afterDatasetsDraw(chart){
+          const c=chart.ctx;
+          chart.getDatasetMeta(0).data.forEach((bar,i)=>{
+            const val=regData[i]; if(!val) return;
+            const{x,y}=bar.getProps(['x','y'],true);
+            c.save();
+            c.font='bold 13px Inter,sans-serif';
+            c.fillStyle='#e6edf3';
+            c.textAlign='center';
+            c.fillText(val.toFixed(1)+'%', x, y-8);
+            c.restore();
+          });
+        }
+      }]
+    });
+  });
+}
+
+
+// ═══════════════════════════════════════════════════
+//  RELATÓRIO PDF — Indicadores Mercado Livre (60 dias)
+// ═══════════════════════════════════════════════════
+async function gerarRelatorioPDF(){
+  const btn=document.getElementById('btn-pdf-report');
+  const info=document.getElementById('pdf-report-info');
+  btn.disabled=true; btn.textContent='⏳ Gerando PDF…';
+  info.textContent='';
+
+  try{
+    if(!S.cob && !S.av && !S.frete){
+      info.textContent='Carregue ao menos Cobertura, Avarias ou Frete para gerar o relatório.';
+      info.style.color='var(--warn)';
+      btn.disabled=false; btn.textContent='📄 Gerar PDF — Indicadores Mercado Livre (60d)';
+      return;
+    }
+
+    // ── Janela de 60 dias ──────────────────────────────────────
+    const hoje=new Date();
+    const de60=new Date(hoje); de60.setDate(hoje.getDate()-60);
+    const deStr=de60.toISOString().substring(0,10);
+    const ateStr=hoje.toISOString().substring(0,10);
+
+    // ── Filtra Cobertura: canal ML + 60 dias ────────────────────
+    const cobML=(S.cob||[]).filter(r=>r.canal2==='ML' && inRange(r.data_criacao,deStr,ateStr));
+
+    // ── Filtra Avarias: canal ML (via NF→Notas) + 60 dias ───────
+    const nfToC2={};
+    if(S.notas) S.notas.forEach(r=>{ const nf=r.num_fiscal||r.numero_nota; if(nf>0) nfToC2[nf]=r.canal2; });
+    const avML=(S.av||[]).filter(r=>nfToC2[r.nf]==='ML' && inRange(r.emissao,deStr,ateStr));
+
+    // ── Filtra Frete: canal ML (via NF+Data→Notas) + 60 dias ────
+    const dayKeyOf=d=>d&&!isNaN(d)?d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'):null;
+    const chaveToCanal={}, chaveToValor={};
+    if(S.notas){
+      const seen=new Set();
+      S.notas.forEach(r=>{
+        const nf=r.num_fiscal||r.numero_nota;
+        const dk=dayKeyOf(r.data_emissao);
+        if(nf>0 && dk){
+          const key=nf+'|'+dk;
+          if(!seen.has(key)){ seen.add(key); chaveToCanal[key]=r.canal2; chaveToValor[key]=r.valor_nota; }
+        }
+      });
+    }
+    const freteKeyOf=r=>{ const dk=dayKeyOf(r.emissao); return dk?r.nf+'|'+dk:null; };
+    const freteML=(S.frete||[]).filter(r=>{
+      const k=freteKeyOf(r);
+      return k && chaveToCanal[k]==='ML' && inRange(r.emissao,deStr,ateStr);
+    });
+    const freteMLvalido=freteML.filter(r=>!r.excluido);
+
+    // ── KPIs: Dados Gerais dos últimos 60 dias ──────────────────
+    const totalCobrado=freteMLvalido.reduce((s,r)=>s+r.cobrado,0);
+    const chavesUnicas=new Set(freteML.map(freteKeyOf).filter(Boolean));
+    let faturamentoTotal=0;
+    chavesUnicas.forEach(k=>{ if(chaveToValor[k]!=null) faturamentoTotal+=chaveToValor[k]; });
+    const freteVals=freteMLvalido.map(r=>r.cobrado).filter(v=>v>0);
+    const freteMedio=freteVals.length?freteVals.reduce((a,b)=>a+b,0)/freteVals.length:0;
+    const freteMax=freteVals.length?Math.max(...freteVals):0;
+    const freteMin=freteVals.length?Math.min(...freteVals):0;
+
+    const cobMLentregues=cobML.filter(r=>IS_ENTREGUE.has(r.microstatus));
+    const nEntregues=cobMLentregues.length;
+    const nNoPrazo=cobMLentregues.filter(r=>r.situacao==='No prazo').length;
+    const nForaPrazo=cobMLentregues.filter(r=>r.situacao==='Atrasado').length;
+    const nTransito=cobML.filter(r=>!IS_ENTREGUE.has(r.microstatus)&&r.microstatus!=='CANCELADO').length;
+    const nAvariadas=avML.filter(r=>r.ocorrencia==='Avaria').length;
+
+    // ── On Time mensal: Data Entrega <= Previsão (mesma lógica do Simulador de Prazo / Entregas) ──
+    // Considera apenas notas JÁ ENTREGUES com previsão válida, excl. canceladas
+    const cobMLnaoCanc=cobML.filter(r=>r.microstatus!=='CANCELADO' && r.data_entrega && r.prev_entrega);
+    const byMC={};
+    cobMLnaoCanc.forEach(r=>{
+      const k=toMK(r.data_criacao); if(!k) return;
+      if(!byMC[k]) byMC[k]={total:0,ot:0};
+      byMC[k].total++;
+      if(r.data_entrega<=r.prev_entrega) byMC[k].ot++;
+    });
+    const mksOT=Object.keys(byMC).sort();
+    const otTotais=mksOT.map(k=>byMC[k].total);
+    const otNoPrazo=mksOT.map(k=>byMC[k].ot);
+    const otPcts=mksOT.map(k=>pctV(byMC[k].ot,byMC[k].total));
+
+    // On Time por transportadora
+    const transpOT={};
+    cobMLnaoCanc.forEach(r=>{
+      const t=r.transportadora||'N/A';
+      if(!transpOT[t]) transpOT[t]={total:0,ot:0};
+      transpOT[t].total++;
+      if(r.data_entrega<=r.prev_entrega) transpOT[t].ot++;
+    });
+    const otRows=Object.entries(transpOT).map(([t,v])=>({t,total:v.total,pct:pctV(v.ot,v.total)})).sort((a,b)=>b.pct-a.pct);
+
+    // ── Avarias de Painéis por Mês (mesma lógica de buildAv) ────
+    const painelNFSet=new Set((S.notas||[]).filter(r=>r.produto.toUpperCase().includes('PAINEL') && r.canal2==='ML').map(r=>r.num_fiscal||r.numero_nota).filter(n=>n>0));
+    const cobPainelByMes={};
+    if(S.cob && painelNFSet.size>0){
+      S.cob.filter(r=>painelNFSet.has(r.nota_fiscal) && r.canal2==='ML' && inRange(r.data_criacao,deStr,ateStr)).forEach(r=>{
+        const k=toMK(r.data_criacao); if(!k) return;
+        cobPainelByMes[k]=(cobPainelByMes[k]||0)+1;
+      });
+    }
+    const avPainelByMes={};
+    const seenAv=new Set();
+    avML.filter(r=>r.ocorrencia==='Avaria' && r.produto.toUpperCase().includes('PAINEL')).forEach(r=>{
+      const k=toMK(r.emissao); if(!k) return;
+      const uid=r.nf+'|'+k;
+      if(!seenAv.has(uid)){ seenAv.add(uid); avPainelByMes[k]=(avPainelByMes[k]||0)+1; }
+    });
+    const allMKav=[...new Set([...Object.keys(cobPainelByMes),...Object.keys(avPainelByMes)])].sort();
+    const avTotM=allMKav.map(k=>cobPainelByMes[k]||0);
+    const avAvM=allMKav.map(k=>avPainelByMes[k]||0);
+    const avPctM=allMKav.map((k,i)=>avTotM[i]?pctV(avAvM[i],avTotM[i]):0);
+
+    // % Avaria por transportadora
+    const nfToTranspCob={};
+    if(S.cob) S.cob.filter(r=>r.canal2==='ML' && inRange(r.data_criacao,deStr,ateStr)).forEach(r=>{ if(r.nota_fiscal>0) nfToTranspCob[r.nota_fiscal]=r.transportadora||'N/A'; });
+    const avTranspMap={};
+    if(S.cob && painelNFSet.size>0){
+      S.cob.filter(r=>painelNFSet.has(r.nota_fiscal) && r.canal2==='ML' && inRange(r.data_criacao,deStr,ateStr)).forEach(r=>{
+        const t=r.transportadora||'N/A';
+        if(!avTranspMap[t]) avTranspMap[t]={totalSet:new Set(),avSet:new Set()};
+        avTranspMap[t].totalSet.add(r.nota_fiscal);
+      });
+    }
+    avML.filter(r=>r.ocorrencia==='Avaria' && r.produto.toUpperCase().includes('PAINEL')).forEach(r=>{
+      const t=nfToTranspCob[r.nf]||r.parceiro||'N/A';
+      if(!avTranspMap[t]) avTranspMap[t]={totalSet:new Set(),avSet:new Set()};
+      avTranspMap[t].avSet.add(r.nf);
+      if(!nfToTranspCob[r.nf]) avTranspMap[t].totalSet.add(r.nf);
+    });
+    const avTRows=Object.entries(avTranspMap)
+      .map(([t,v])=>({t,total:v.totalSet.size,avarias:v.avSet.size,pct:v.totalSet.size?pctV(v.avSet.size,v.totalSet.size):0}))
+      .filter(r=>r.total>0||r.avarias>0)
+      .sort((a,b)=>b.pct-a.pct);
+
+    // ── Faturamento × Frete × %CdF mensal (mesma lógica de buildFrete) ──
+    const byMesFrt={};
+    freteMLvalido.forEach(r=>{
+      const k=toMK(r.emissao); if(!k) return;
+      if(!byMesFrt[k]) byMesFrt[k]={chaves:new Set(),cobrado:0};
+      byMesFrt[k].cobrado+=r.cobrado;
+      const fk=freteKeyOf(r); if(fk) byMesFrt[k].chaves.add(fk);
+    });
+    const mksFrt=Object.keys(byMesFrt).sort();
+    const fatM=mksFrt.map(k=>{ let s=0; byMesFrt[k].chaves.forEach(ck=>{ if(chaveToValor[ck]!=null) s+=chaveToValor[ck]; }); return s; });
+    const freteM=mksFrt.map(k=>byMesFrt[k].cobrado);
+    const cdfM=mksFrt.map((k,i)=>fatM[i]?(freteM[i]/fatM[i]*100):0);
+
+    // % CdF por transportadora
+    const porTransp={};
+    freteMLvalido.forEach(r=>{
+      const t=r.transportadora||'(sem transportadora)';
+      if(!porTransp[t]) porTransp[t]={cobrado:0,chaves:new Set()};
+      porTransp[t].cobrado+=r.cobrado;
+      const k=freteKeyOf(r); if(k) porTransp[t].chaves.add(k);
+    });
+    const cdfRows=Object.entries(porTransp).map(([t,v])=>{
+      let fat=0; v.chaves.forEach(k=>{ if(chaveToValor[k]!=null) fat+=chaveToValor[k]; });
+      return{t, notas:v.chaves.size, pct: fat?(v.cobrado/fat*100):0};
+    }).sort((a,b)=>b.pct-a.pct);
+
+    // ════════════════════════════════════════════════════════════
+    //  Monta um container temporário fora de tela com os visuais
+    // ════════════════════════════════════════════════════════════
+    const wrap=document.createElement('div');
+    wrap.id='pdf-report-wrap';
+    wrap.style.cssText='position:fixed;top:0;left:-9999px;width:1000px;background:#f5f6d5;padding:24px;font-family:Inter,sans-serif;color:#2d2e0f;z-index:-1';
+    document.body.appendChild(wrap);
+
+    const periodoStr=de60.toLocaleDateString('pt-BR')+' a '+hoje.toLocaleDateString('pt-BR');
+
+    wrap.innerHTML=`
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:22px;font-weight:700;color:#b8860b">Indicadores Gerais — Mercado Livre</div>
+        <div style="font-size:13px;color:#6b6d30;margin-top:4px">Período: últimos 60 dias (${periodoStr})</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px">
+        ${kpiBox('Faturamento',fmtBRL(faturamentoTotal),'#f0b429')}
+        ${kpiBox('Frete Cobrado',fmtBRL(totalCobrado),'#ef4444')}
+        ${kpiBox('Frete Médio',fmtBRL(freteMedio),'#3b82f6')}
+        ${kpiBox('Frete Máximo',fmtBRL(freteMax),'#3b82f6')}
+        ${kpiBox('Frete Mínimo',fmtBRL(freteMin),'#3b82f6')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px">
+        ${kpiBox('Notas Entregues',fmtN(nEntregues),'#10b981')}
+        ${kpiBox('Notas no Prazo',fmtN(nNoPrazo),'#10b981')}
+        ${kpiBox('Notas Fora do Prazo',fmtN(nForaPrazo),'#ef4444')}
+        ${kpiBox('Notas em Trânsito',fmtN(nTransito),'#3b82f6')}
+        ${kpiBox('Notas Avariadas',fmtN(nAvariadas),'#ef4444')}
+      </div>
+
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px">
+        ${chartBox('On Time de Entregas','pdf-ch-otif',340)}
+        ${(()=>{const maxN=Math.max(...otRows.map(r=>r.total),1);return tableBox('On Time – Por Transportadora',['Transportadora','Notas','% On Time'],
+          otRows.map(r=>[r.t, notasBar(r.total,maxN), pctStr(r.pct)]));})()}
+      </div>
+
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px">
+        ${chartBox('Avarias de Painéis por Mês','pdf-ch-avarias',340)}
+        ${(()=>{const maxN=Math.max(...avTRows.map(r=>r.total),1);return tableBox('% Avaria por Transportadora',['Transportadora','Notas','% Avaria'],
+          avTRows.map(r=>[r.t, notasBar(r.total,maxN), pctStr(r.pct)]));})()}
+      </div>
+
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px">
+        ${chartBox('Custo de Frete em relação ao faturamento','pdf-ch-frete',340)}
+        ${(()=>{const maxN=Math.max(...cdfRows.map(r=>r.notas),1);return tableBox('% CdF – Por Transportadora',['Transportadora','Notas','% CdF'],
+          cdfRows.map(r=>[r.t, notasBar(r.notas,maxN), pctStr(r.pct)]));})()}
+      </div>
+    `;
+
+    function kpiBox(label,val,col){
+      return `<div style="background:#fefef0;border:1px solid #d4a017;border-radius:6px;padding:12px 10px;text-align:center">
+        <div style="font-size:11px;color:#6b6d30;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;font-weight:500">${label}</div>
+        <div style="font-size:17px;font-weight:700;color:#2d2e0f">${val}</div>
+      </div>`;
+    }
+    function chartBox(title,canvasId,height){
+      return `<div style="background:#fefef0;border:1px solid #d8da9a;border-radius:8px;padding:14px;display:flex;flex-direction:column">
+        <div style="font-size:14px;font-weight:600;margin-bottom:10px;color:#2d2e0f">${title}</div>
+        <div style="height:${height}px;width:100%;position:relative"><canvas id="${canvasId}" style="width:100%!important;height:100%!important"></canvas></div>
+      </div>`;
+    }
+    function tableBox(title,headers,rows){
+      return `<div style="background:#fefef0;border:1px solid #d8da9a;border-radius:8px;padding:14px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:10px;color:#2d2e0f">${title}</div>
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <thead><tr>${headers.map(h=>`<th style="text-align:left;color:#6b6d30;font-weight:500;padding:5px 6px;border-bottom:1px solid #d8da9a;text-transform:uppercase;font-size:11px">${h}</th>`).join('')}</tr></thead>
+          <tbody>${rows.map((r,ri)=>`<tr style="background:${ri%2===0?'#f5f6d5':'transparent'}">${r.map((c,i)=>`<td style="padding:5px 6px;border-bottom:1px solid #d8da9a;color:#2d2e0f;${i>0?'text-align:right;font-family:DM Mono,monospace':''}">${c}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+    }
+    function pctStr(p){ const col=p>=95?'#047857':p>=85?'#b45309':'#b91c1c'; return `<span style="color:${col};font-weight:600">${p.toFixed(1)}%</span>`; }
+    function notasBar(n,maxN){
+      const pct=Math.min(100,(n/maxN)*100);
+      return `<div style="display:flex;align-items:center;gap:0;width:100%;min-width:60px">
+        <div style="flex:1;height:6px;background:#e8e9c2;border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct.toFixed(1)}%;background:#b8860b;border-radius:3px"></div>
+        </div>
+      </div>`;
+    }
+
+    // ── Renderiza os 3 gráficos nos canvases do wrap ────────────
+    await new Promise(r=>requestAnimationFrame(r)); // garante que o DOM montou
+
+    const tmpCharts=[];
+    function renderOtif(){
+      const ctx=document.getElementById('pdf-ch-otif');
+      const maxTot=Math.max(...otTotais,1);
+      const ch=new Chart(ctx,{type:'bar',data:{labels:mksOT.map(mkLbl),datasets:[
+        {label:'Total de Notas',data:otTotais,backgroundColor:'rgba(31,58,99,.75)',borderColor:'#1f3a63',borderWidth:1,yAxisID:'y'},
+        {label:'Notas no Prazo', data:otNoPrazo,backgroundColor:'rgba(71,133,201,.75)',borderColor:'#4785c9',borderWidth:1,yAxisID:'y'},
+        {label:'% On Time',data:otPcts,type:'line',borderColor:'#c9742f',backgroundColor:'transparent',borderWidth:2,pointRadius:4,pointBackgroundColor:'#c9742f',tension:.3,yAxisID:'y2'},
+      ]},options:{responsive:false,animation:false,devicePixelRatio:1.5,width:640,height:340,
+        layout:{padding:{top:38}},
+        plugins:{legend:{display:true,position:'top',align:'center',labels:{color:'#4a4c1a',font:{size:12},boxWidth:11,padding:14}}},
+        scales:{x:{ticks:{color:'#6b6d30',font:{size:12}},grid:{color:'#e3e4b8'}},
+                y:{suggestedMax:maxTot*1.18,ticks:{color:'#6b6d30',font:{size:12}},grid:{color:'#e3e4b8'}},
+                y2:{type:'linear',position:'right',min:0,max:115,ticks:{color:'#c9742f',font:{size:12},stepSize:20,callback:v=>v<=100?v+'%':''},grid:{drawOnChartArea:false}}}},
+      plugins:[{id:'otifLbl',afterDatasetsDraw(chart){
+        const c=chart.ctx;
+        [0,1].forEach(di=>{
+          chart.getDatasetMeta(di).data.forEach((bar,i)=>{
+            const val=chart.data.datasets[di].data[i]; if(!val) return;
+            const{x,y}=bar.getProps(['x','y'],true);
+            c.save();c.font='bold 11px Inter,sans-serif';c.fillStyle='#2d2e0f';c.textAlign='center';c.textBaseline='bottom';
+            c.fillText(fmtN(val),x,y-4);c.restore();
+          });
+        });
+        chart.getDatasetMeta(2).data.forEach((pt,i)=>{
+          const val=otPcts[i]; if(val==null) return;
+          const{x,y}=pt.getProps(['x','y'],true);
+          c.save();c.font='bold 12px Inter,sans-serif';c.fillStyle='#c9742f';c.textAlign='center';c.textBaseline='bottom';
+          c.fillText(val.toFixed(1)+'%',x,y-8);c.restore();
+        });
+      }}]});
+      tmpCharts.push(ch);
+    }
+    function renderAvarias(){
+      const ctx=document.getElementById('pdf-ch-avarias');
+      const maxTot=Math.max(...avTotM,1);
+      const maxPct=Math.max(...avPctM,1);
+      const ch=new Chart(ctx,{type:'bar',data:{labels:allMKav.map(mkLbl),datasets:[
+        {label:'NFs c/ Painel',data:avTotM,backgroundColor:'rgba(31,58,99,.75)',borderColor:'#1f3a63',borderWidth:1,yAxisID:'y'},
+        {label:'NFs c/ Avaria', data:avAvM,backgroundColor:'rgba(185,28,28,.75)',borderColor:'#b91c1c',borderWidth:1,yAxisID:'y'},
+        {label:'% Avaria',data:avPctM,type:'line',borderColor:'#c9742f',backgroundColor:'transparent',borderWidth:2,pointRadius:4,pointBackgroundColor:'#c9742f',tension:.3,yAxisID:'y2'},
+      ]},options:{responsive:false,animation:false,devicePixelRatio:1.5,width:640,height:340,
+        layout:{padding:{top:38}},
+        plugins:{legend:{display:true,position:'top',align:'center',labels:{color:'#4a4c1a',font:{size:12},boxWidth:11,padding:14}}},
+        scales:{x:{ticks:{color:'#6b6d30',font:{size:12}},grid:{color:'#e3e4b8'}},
+                y:{suggestedMax:maxTot*1.18,ticks:{color:'#6b6d30',font:{size:12}},grid:{color:'#e3e4b8'}},
+                y2:{type:'linear',position:'right',min:0,suggestedMax:maxPct*1.4,ticks:{color:'#c9742f',font:{size:12},callback:v=>v+'%'},grid:{drawOnChartArea:false}}}},
+      plugins:[{id:'avLbl',afterDatasetsDraw(chart){
+        const c=chart.ctx;
+        [0,1].forEach(di=>{
+          chart.getDatasetMeta(di).data.forEach((bar,i)=>{
+            const val=chart.data.datasets[di].data[i]; if(!val) return;
+            const{x,y}=bar.getProps(['x','y'],true);
+            c.save();c.font='bold 11px Inter,sans-serif';c.fillStyle='#2d2e0f';c.textAlign='center';c.textBaseline='bottom';
+            c.fillText(fmtN(val),x,y-4);c.restore();
+          });
+        });
+        chart.getDatasetMeta(2).data.forEach((pt,i)=>{
+          const val=avPctM[i]; if(val==null) return;
+          const{x,y}=pt.getProps(['x','y'],true);
+          c.save();c.font='bold 12px Inter,sans-serif';c.fillStyle='#c9742f';c.textAlign='center';c.textBaseline='bottom';
+          c.fillText(val.toFixed(1)+'%',x,y-8);c.restore();
+        });
+      }}]});
+      tmpCharts.push(ch);
+    }
+    function renderFrete(){
+      const ctx=document.getElementById('pdf-ch-frete');
+      const maxFat=Math.max(...fatM,1);
+      const maxCdf=Math.max(...cdfM,1);
+      const ch=new Chart(ctx,{data:{labels:mksFrt.map(mkLbl),datasets:[
+        {type:'bar',label:'Faturamento Total',data:fatM,backgroundColor:'#c9a227cc',borderColor:'#b8860b',borderWidth:1,yAxisID:'y'},
+        {type:'bar',label:'Frete Total',data:freteM,backgroundColor:'#1f3a63cc',borderColor:'#1f3a63',borderWidth:1,yAxisID:'y'},
+        {type:'line',label:'% CdF',data:cdfM,borderColor:'#c9742f',backgroundColor:'transparent',borderWidth:2,pointRadius:4,pointBackgroundColor:'#c9742f',tension:.3,yAxisID:'y2'},
+      ]},options:{responsive:false,animation:false,devicePixelRatio:1.5,width:640,height:340,
+        layout:{padding:{top:38}},
+        plugins:{legend:{display:true,position:'top',align:'center',labels:{color:'#4a4c1a',font:{size:12},boxWidth:11,padding:14}}},
+        scales:{x:{ticks:{color:'#6b6d30',font:{size:12}},grid:{color:'#e3e4b8'}},
+                y:{suggestedMax:maxFat*1.18,ticks:{color:'#6b6d30',font:{size:12},callback:v=>fmtAxis(v)},grid:{color:'#e3e4b8'}},
+                y2:{type:'linear',position:'right',min:0,suggestedMax:maxCdf*1.4,ticks:{color:'#c9742f',font:{size:12},callback:v=>v+'%'},grid:{drawOnChartArea:false}}}},
+      plugins:[{id:'frtPdfLbl',afterDatasetsDraw(chart){
+        const c=chart.ctx;
+        [0,1].forEach(di=>{
+          chart.getDatasetMeta(di).data.forEach((bar,i)=>{
+            const val=chart.data.datasets[di].data[i]; if(!val) return;
+            const{x,y}=bar.getProps(['x','y'],true);
+            c.save();c.font='bold 11px Inter,sans-serif';c.fillStyle='#2d2e0f';c.textAlign='center';c.textBaseline='bottom';
+            c.fillText(fmtAxis(val),x,y-4);c.restore();
+          });
+        });
+        chart.getDatasetMeta(2).data.forEach((pt,i)=>{
+          const val=cdfM[i]; if(val==null) return;
+          const{x,y}=pt.getProps(['x','y'],true);
+          c.save();c.font='bold 12px Inter,sans-serif';c.fillStyle='#c9742f';c.textAlign='center';c.textBaseline='bottom';
+          c.fillText(val.toFixed(1)+'%',x,y-8);c.restore();
+        });
+      }}]});
+      tmpCharts.push(ch);
+    }
+    renderOtif(); renderAvarias(); renderFrete();
+
+    // Espera os gráficos desenharem antes de capturar
+    await new Promise(r=>setTimeout(r,400));
+
+    // ── Captura com html2canvas e monta o PDF (página única, tamanho ajustado) ──
+    // scale:1.5 (em vez de 2) + JPEG com compressão reduz bastante o tamanho do arquivo
+    const canvas=await html2canvas(wrap,{backgroundColor:'#f5f6d5',scale:1.5});
+    const imgData=canvas.toDataURL('image/jpeg',0.85);
+
+    const { jsPDF }=window.jspdf;
+    // Página com largura A4 mas ALTURA customizada = altura real do conteúdo
+    // (evita cortar qualquer visual entre páginas — tudo cabe em uma única página)
+    const pageWmm=210; // largura A4 em mm
+    const marginMm=8;
+    const imgWmm=pageWmm-marginMm*2;
+    const imgHmm=(canvas.height*imgWmm)/canvas.width;
+    const pageHmm=imgHmm+marginMm*2;
+
+    const pdf=new jsPDF({orientation:'p',unit:'mm',format:[pageWmm,pageHmm]});
+    pdf.addImage(imgData,'JPEG',marginMm,marginMm,imgWmm,imgHmm);
+
+    const todayStr=hoje.toLocaleDateString('pt-BR').replace(/\//g,'-');
+    pdf.save(`Indicadores_Mercado_Livre_${todayStr}.pdf`);
+
+    // Limpeza
+    tmpCharts.forEach(c=>c.destroy());
+    document.body.removeChild(wrap);
+
+    info.textContent='✅ PDF gerado e baixado com sucesso!';
+    info.style.color='var(--accent3)';
+
+  }catch(err){
+    info.textContent='❌ Erro ao gerar PDF: '+err.message;
+    info.style.color='var(--danger)';
+    console.error(err);
+    const stale=document.getElementById('pdf-report-wrap');
+    if(stale) document.body.removeChild(stale);
+  }
+
+  btn.disabled=false; btn.textContent='📄 Gerar PDF — Indicadores Mercado Livre (60d)';
+}
+
+
+// ═══════════════════════════════════════════════════
+//  TAB: SIMULADOR DE PRAZO
+// ═══════════════════════════════════════════════════
+function simAjustarDias(delta){
+  const inp=document.getElementById('sim-dias');
+  inp.value=(parseInt(inp.value)||0)+delta;
+}
+
+function buildSimulador(){
+  const el=document.getElementById('sim-content');
+  if(!S.cob){ el.innerHTML='<p style="color:var(--text3);padding:40px 0">Carregue a Cobertura para usar o simulador.</p>'; return; }
+
+  // Populate filters
+  const ufs=[...new Set(S.cob.map(r=>r.uf))].filter(u=>u&&u.length===2).sort();
+  const transps=[...new Set(S.cob.map(r=>r.transportadora))].filter(Boolean).sort();
+  const canais=[...new Set(S.cob.map(r=>r.canal2))].filter(Boolean).sort();
+  fillSel('sim-regiao', REGIAO_ORDER, 'Todas');
+  fillSel('sim-uf', ufs, 'Todas');
+  fillSel('sim-transp', transps, 'Todas');
+  fillSel('sim-canal', canais.map(c=>({v:c,l:CANAL2_LBL[c]||c})), 'Todos');
+
+  const fr=gv('sim-regiao'), fu=gv('sim-uf'), ft=gv('sim-transp'), fc=gv('sim-canal'), fp=gv('sim-praca'), fde=gv('sim-de'), fate=gv('sim-ate');
+  const diasAjuste=parseInt(document.getElementById('sim-dias').value)||0;
+
+  // Universo: notas com Data de Entrega preenchida e NÃO canceladas (conforme definido)
+  const base=S.cob.filter(r=>{
+    if(!r.data_entrega) return false;
+    if(r.microstatus==='CANCELADO'||r.microstatus==='CANCELADA') return false;
+    if(fr){ const us=REGIOES[fr]; if(us&&!us.includes(r.uf)) return false; }
+    if(fu && r.uf!==fu) return false;
+    if(ft && r.transportadora!==ft) return false;
+    if(fc && r.canal2!==fc) return false;
+    if(fp && r.praca!==fp) return false;
+    if(!inRange(r.data_criacao,fde,fate)) return false;
+    if(!r.prev_entrega) return false; // precisa de previsão válida para simular
+    return true;
+  });
+
+  document.getElementById('ti-sim').textContent=fmtN(base.length)+' notas';
+
+  if(!base.length){
+    el.innerHTML='<p style="color:var(--text3);padding:40px 0">Nenhuma nota encontrada com os filtros atuais (precisa ter Data de Entrega e Previsão de Entrega preenchidas).</p>';
+    return;
+  }
+
+  // ── Calcula status REAL e HIPOTÉTICO para cada nota ──────────
+  const MS_DIA=86400000;
+  const rows=base.map(r=>{
+    const prevReal=r.prev_entrega;
+    const prevSim=new Date(prevReal.getTime()+diasAjuste*MS_DIA);
+    const entrega=r.data_entrega;
+    const diasPrazoReal=Math.round((prevReal-r.data_criacao)/MS_DIA);
+    const diasPrazoSim=diasPrazoReal+diasAjuste;
+    const statusReal = entrega<=prevReal ? 'No prazo' : 'Atrasado';
+    const statusSim  = entrega<=prevSim  ? 'No prazo' : 'Atrasado';
+    return{
+      nf:r.nota_fiscal, transportadora:r.transportadora, uf:r.uf, cidade:r.cidade,
+      data_criacao:r.data_criacao, prevReal, prevSim, entrega,
+      diasPrazoReal, diasPrazoSim, statusReal, statusSim,
+      mudou: statusReal!==statusSim,
+    };
+  });
+
+  const totalNotas=rows.length;
+  const noPrazoReal=rows.filter(r=>r.statusReal==='No prazo').length;
+  const noPrazoSim =rows.filter(r=>r.statusSim==='No prazo').length;
+  const otReal=pctV(noPrazoReal,totalNotas);
+  const otSim =pctV(noPrazoSim,totalNotas);
+  const delta=otSim-otReal;
+  const pioraram=rows.filter(r=>r.statusReal==='No prazo'&&r.statusSim==='Atrasado').length;
+  const melhoraram=rows.filter(r=>r.statusReal==='Atrasado'&&r.statusSim==='No prazo').length;
+
+  // ── On Time mensal: real vs simulado ─────────────────────────
+  const byMes={};
+  rows.forEach(r=>{
+    const k=toMK(r.data_criacao); if(!k) return;
+    if(!byMes[k]) byMes[k]={total:0,realOk:0,simOk:0};
+    byMes[k].total++;
+    if(r.statusReal==='No prazo') byMes[k].realOk++;
+    if(r.statusSim ==='No prazo') byMes[k].simOk++;
+  });
+  const mks=Object.keys(byMes).sort();
+  const otRealM=mks.map(k=>pctV(byMes[k].realOk,byMes[k].total));
+  const otSimM =mks.map(k=>pctV(byMes[k].simOk,byMes[k].total));
+
+  const diasLabel=diasAjuste===0?'Sem ajuste':(diasAjuste>0?'+':'')+diasAjuste+' dia'+(Math.abs(diasAjuste)!==1?'s':'');
+  const deltaCol=delta>0?'var(--accent3)':delta<0?'var(--danger)':'var(--text3)';
+
+  // ── Breakdown por dimensão ativo nos filtros ─────────────────
+  // Agrupa o resultado por Praça, UF ou Região dependendo dos filtros ativos
+  let breakdownDim='praca', breakdownLabel='Praça';
+  if(fu) { breakdownDim='transportadora'; breakdownLabel='Transportadora'; }
+  else if(fr||fp) { breakdownDim='uf'; breakdownLabel='UF'; }
+  const breakdownMap={};
+  rows.forEach(r=>{
+    const dim=r[breakdownDim]||'N/A';
+    if(!breakdownMap[dim]) breakdownMap[dim]={total:0,realOk:0,simOk:0};
+    breakdownMap[dim].total++;
+    if(r.statusReal==='No prazo') breakdownMap[dim].realOk++;
+    if(r.statusSim ==='No prazo') breakdownMap[dim].simOk++;
+  });
+  const breakdownRows=Object.entries(breakdownMap)
+    .map(([dim,v])=>({dim,total:v.total,otReal:pctV(v.realOk,v.total),otSim:pctV(v.simOk,v.total),delta:pctV(v.simOk,v.total)-pctV(v.realOk,v.total)}))
+    .sort((a,b)=>b.total-a.total);
+
+  let html=`
+  <div class="kpi-row" style="margin-bottom:16px">
+    <div class="kpi" style="--kc:var(--accent2)"><div class="kpi-lbl">On Time Real</div><div class="kpi-val">${otReal.toFixed(1)}%</div><div class="kpi-sub">${fmtN(noPrazoReal)} de ${fmtN(totalNotas)} notas</div></div>
+    <div class="kpi" style="--kc:var(--accent)"><div class="kpi-lbl">On Time Simulado</div><div class="kpi-val">${otSim.toFixed(1)}%</div><div class="kpi-sub">Cenário: ${diasLabel}</div></div>
+    <div class="kpi" style="--kc:${deltaCol}"><div class="kpi-lbl">Variação</div><div class="kpi-val" style="color:${deltaCol}">${delta>0?'+':''}${delta.toFixed(1)}pp</div><div class="kpi-sub">Pontos percentuais</div></div>
+    <div class="kpi" style="--kc:var(--danger)"><div class="kpi-lbl">Pioraram</div><div class="kpi-val">${fmtN(pioraram)}</div>
+      <div class="kpi-sub">${pctN(pioraram,totalNotas)} do total · ${fmtN(pioraram)} notas</div>
+      <div style="margin-top:5px;height:4px;background:var(--border);border-radius:2px"><div style="height:4px;width:${Math.min(100,pctV(pioraram,totalNotas)).toFixed(1)}%;background:var(--danger);border-radius:2px"></div></div>
+    </div>
+    <div class="kpi" style="--kc:var(--accent3)"><div class="kpi-lbl">Melhoraram</div><div class="kpi-val">${fmtN(melhoraram)}</div>
+      <div class="kpi-sub">${pctN(melhoraram,totalNotas)} do total · ${fmtN(melhoraram)} notas</div>
+      <div style="margin-top:5px;height:4px;background:var(--border);border-radius:2px"><div style="height:4px;width:${Math.min(100,pctV(melhoraram,totalNotas)).toFixed(1)}%;background:var(--accent3);border-radius:2px"></div></div>
+    </div>
+  </div>
+
+  <!-- Breakdown: On Time Real vs Simulado por dimensão -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="ch"><span class="ct">Impacto por ${breakdownLabel}</span><span class="cs">On Time Real × Simulado — ${diasLabel}</span></div>
+    <div class="tw" style="max-height:260px;overflow-y:auto"><table>
+      <thead><tr>
+        <th>${breakdownLabel}</th>
+        <th class="tr">Notas</th>
+        <th>% do total</th>
+        <th>On Time Real</th>
+        <th>On Time Simulado</th>
+        <th class="tr">Variação</th>
+      </tr></thead>
+      <tbody>${breakdownRows.map(r=>{
+        const barW=Math.min(100,pctV(r.total,totalNotas)).toFixed(1);
+        const dCol=r.delta>0?'var(--accent3)':r.delta<0?'var(--danger)':'var(--text3)';
+        const otRealCol=r.otReal>=95?'#10b981':r.otReal>=85?'#f0b429':'#ef4444';
+        const otSimCol =r.otSim >=95?'#10b981':r.otSim >=85?'#f0b429':'#ef4444';
+        return`<tr>
+          <td style="font-weight:500">${r.dim}</td>
+          <td class="mono tr">${fmtN(r.total)}</td>
+          <td style="min-width:120px">
+            <div style="display:flex;align-items:center;gap:7px">
+              <div style="flex:1;height:6px;background:var(--border);border-radius:3px">
+                <div style="height:6px;width:${barW}%;background:var(--accent2);border-radius:3px"></div>
+              </div>
+              <span style="font-size:12px;color:var(--text3);white-space:nowrap">${pctN(r.total,totalNotas)}</span>
+            </div>
+          </td>
+          <td><span style="color:${otRealCol};font-weight:600;font-size:13px">${r.otReal.toFixed(1)}%</span></td>
+          <td><span style="color:${otSimCol};font-weight:600;font-size:13px">${r.otSim.toFixed(1)}%</span></td>
+          <td class="mono tr"><span style="color:${dCol};font-weight:600">${r.delta>0?'+':''}${r.delta.toFixed(1)}pp</span></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="ch"><span class="ct">On Time Temporal — Real × Simulado</span><span class="cs">${diasLabel} na Previsão de Entrega</span></div>
+    <div class="cwrap" style="height:300px"><canvas id="ch-sim-otif"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><span class="ct">Detalhe por Nota</span><span class="cs">${totalNotas} registros</span></div>
+    <input class="tbl-search" id="sim-srch" placeholder="Buscar por NF, cidade, UF, transportadora…" oninput="filterTable('sim-srch')">
+    <div class="scroll-table" style="max-height:380px"><table>
+      <thead><tr>
+        <th>NF</th><th>Transportadora</th><th>UF</th>
+        <th class="tr">Prazo Real</th><th>Status Real</th>
+        <th class="tr">Prazo Simulado</th><th>Status Simulado</th>
+      </tr></thead>
+      <tbody id="tbl-sim-srch">${rows.map(r=>{
+        const colReal=r.statusReal==='No prazo'?'tg':'tr2';
+        const colSim =r.statusSim ==='No prazo'?'tg':'tr2';
+        const rowBg = r.mudou ? (r.statusSim==='No prazo'?'rgba(16,185,129,.07)':'rgba(239,68,68,.07)') : '';
+        return`<tr data-search="${[r.nf,r.transportadora,r.cidade,r.uf].join(' ').toLowerCase()}" style="${rowBg?'background:'+rowBg:''}">
+          <td class="mono">${r.nf}</td><td>${r.transportadora}</td><td>${r.uf}</td>
+          <td class="mono tr">${r.diasPrazoReal}d</td><td><span class="tag ${colReal}">${r.statusReal}</span></td>
+          <td class="mono tr">${r.diasPrazoSim}d</td><td><span class="tag ${colSim}">${r.statusSim}</span>${r.mudou?' <span style="font-size:11px;color:var(--text3)">↔</span>':''}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>
+  </div>`;
+
+  el.innerHTML=html;
+
+  requestAnimationFrame(()=>{
+    dChart('ch-sim-otif');
+    const ctx=document.getElementById('ch-sim-otif');
+    if(ctx) S.charts['ch-sim-otif']=new Chart(ctx,{type:'line',
+      data:{labels:mks.map(mkLbl),datasets:[
+        {label:'On Time Real',data:otRealM,borderColor:'#3b82f6',backgroundColor:'#3b82f633',borderWidth:2,pointRadius:4,pointBackgroundColor:'#3b82f6',tension:.3},
+        {label:'On Time Simulado',data:otSimM,borderColor:'#f0b429',backgroundColor:'#f0b42933',borderWidth:2,pointRadius:4,pointBackgroundColor:'#f0b429',tension:.3,borderDash:diasAjuste!==0?[6,4]:[]},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'top',labels:{color:'#8b949e',font:{size:13},boxWidth:11,padding:10}},
+                 tooltip:{...TIP,callbacks:{label:c=>' '+c.dataset.label+': '+c.raw.toFixed(1)+'%'}}},
+        scales:{x:{ticks:{color:'#6e7681',font:{size:13}},grid:{color:'#21262d'}},
+                y:{min:0,max:100,ticks:{color:'#6e7681',font:{size:13},callback:v=>v+'%'},grid:{color:'#21262d'}}}},
+      plugins:[{id:'simLbl',afterDatasetsDraw(chart){
+        const c=chart.ctx;
+        [0,1].forEach(di=>{
+          chart.getDatasetMeta(di).data.forEach((pt,i)=>{
+            const val=chart.data.datasets[di].data[i]; if(val==null) return;
+            const{x,y}=pt.getProps(['x','y'],true);
+            c.save();c.font='bold 11px Inter,sans-serif';c.fillStyle=di===0?'#3b82f6':'#f0b429';
+            c.textAlign='center';c.textBaseline=di===0?'bottom':'top';
+            c.fillText(val.toFixed(1)+'%',x,di===0?y-7:y+7);c.restore();
+          });
+        });
+      }}]
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  AUDITORIA FRETE (aba temporária — roda só no navegador)
+// ═══════════════════════════════════════════════════
+const pendingAud={notas:null,sp:null,mg:null,nc:null};
+function setupAudUp(fid,lid,uid,key,required){
+  const inp=document.getElementById(fid),lbl=document.getElementById(lid),st=document.getElementById(uid);
+  inp.addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f) return;
+    pendingAud[key]=f; lbl.classList.add('loaded');
+    st.textContent=f.name.length>14?f.name.substring(0,12)+'…':f.name;
+    if(pendingAud.notas) document.getElementById('btn-aud').disabled=false;
+  });
+}
+setupAudUp('f-aud-notas','lbl-aud-notas','us-aud-notas','notas',true);
+setupAudUp('f-aud-sp','lbl-aud-sp','us-aud-sp','sp',false);
+setupAudUp('f-aud-mg','lbl-aud-mg','us-aud-mg','mg',false);
+setupAudUp('f-aud-nc','lbl-aud-nc','us-aud-nc','nc',false);
+
+// Lê um arquivo de Frete (aba "Mestre") retornando linhas brutas + NF normalizado
+// Retorna um Set de chaves compostas 'NF|AAAA-MM-DD' a partir de uma base de Frete.
+// A chave composta evita ligar o frete a uma NF de outro CNPJ que reiniciou a numeração
+// na mesma data (já que a numeração de NF volta a '1' quando um novo CNPJ é aberto).
+async function readAudFrete(file){
+  const rows=await readFreteSheet(file); // reusa a função já existente (detecta aba Mestre)
+  const keys=[];
+  rows.forEach(r=>{
+    const nf=Number(rGet(r,'NF','nf')||0); if(!nf) return;
+    let v=rGet(r,'Data de Emissão','Data de Emissao'); if(!v) return;
+    let d;
+    if(v instanceof Date) d=v;
+    else if(typeof v==='number') d=new Date(Math.round((v-25569)*86400*1000));
+    else d=parseDate(v.toString());
+    if(!d||isNaN(d)) return;
+    const dk=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    keys.push(nf+'|'+dk);
+  });
+  return keys;
+}
+
+// Lê a Base_Notas BRUTA (sem normNotas) preservando TODAS as colunas originais
+function readRawXLSX(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      try{
+        const wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
+        const ws=repairRef(wb.Sheets[wb.SheetNames[0]]);
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:null});
+        res(rows);
+      }catch(err){rej(err);}
+    };
+    r.onerror=rej; r.readAsBinaryString(file);
+  });
+}
+
+async function runAuditoria(){
+  const btn=document.getElementById('btn-aud');
+  const info=document.getElementById('aud-info');
+  const ano=parseInt(document.getElementById('aud-ano').value)||2026;
+  if(!pendingAud.notas){ info.textContent='Carregue a Base_Notas primeiro.'; return; }
+
+  btn.textContent='Processando…'; btn.disabled=true;
+  info.textContent=''; info.style.color='var(--text3)';
+
+  try{
+    // 1. Lê a Base_Notas BRUTA (preserva todas as colunas)
+    const rawNotas=await readRawXLSX(pendingAud.notas);
+    if(!rawNotas.length) throw new Error('Base_Notas retornou 0 linhas. Verifique o arquivo (pode ser Strict Open XML — resalve como .xlsx no Excel).');
+
+    // 2. Detecta a coluna de NF na Base_Notas (tenta nomes comuns)
+    const sampleRow=rawNotas[0];
+    const nfCandidates=['NumFiscal','numfiscal','Num Fiscal','Numero Fiscal','NF'];
+    let nfCol=nfCandidates.find(c=>c in sampleRow);
+    if(!nfCol){
+      info.textContent='Não encontrei a coluna de Nota Fiscal (NumFiscal) na Base_Notas. Verifique o nome da coluna.';
+      btn.textContent='🔎 Processar e Gerar Excel'; btn.disabled=false;
+      return;
+    }
+
+    // 3. Detecta a coluna de data de emissão — OBRIGATÓRIA para a chave composta
+    const dateCandidates=['data_emissao','Data Emissão','Data Emissao','Data de Emissão'];
+    let dateCol=dateCandidates.find(c=>c in sampleRow);
+    if(!dateCol){
+      info.textContent='Não encontrei a coluna de Data de Emissão na Base_Notas. Ela é necessária para evitar cruzar NFs de CNPJs diferentes com numeração reiniciada.';
+      btn.textContent='🔎 Processar e Gerar Excel'; btn.disabled=false;
+      return;
+    }
+
+    // Helper: converte qualquer valor de data (Date/serial Excel/string) em 'AAAA-MM-DD'
+    function toDayKey(v){
+      if(!v) return null;
+      let d;
+      if(v instanceof Date) d=v;
+      else if(typeof v==='number') d=new Date(Math.round((v-25569)*86400*1000));
+      else d=parseDate(v.toString());
+      if(!d||isNaN(d)) return null;
+      return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    }
+    function getYear(dayKey){ return dayKey?parseInt(dayKey.slice(0,4)):null; }
+
+    // 4. Lê as bases de Frete disponíveis e monta o Set de chaves compostas 'NF|AAAA-MM-DD' COM frete
+    // (chave composta evita ligar o frete a uma NF de outro CNPJ que reiniciou a numeração)
+    const chavesComFrete=new Set();
+    if(pendingAud.sp){ (await readAudFrete(pendingAud.sp)).forEach(k=>chavesComFrete.add(k)); }
+    if(pendingAud.mg){ (await readAudFrete(pendingAud.mg)).forEach(k=>chavesComFrete.add(k)); }
+    if(pendingAud.nc){ (await readAudFrete(pendingAud.nc)).forEach(k=>chavesComFrete.add(k)); }
+
+    if(!chavesComFrete.size){
+      info.textContent='Nenhuma base de Frete foi carregada — todas as notas do ano serão consideradas "sem frete".';
+      info.style.color='var(--warn)';
+    }
+
+    // 5. Filtra: ano de referência + chave composta (NF+Data) sem frete
+    const semFrete=rawNotas.filter(r=>{
+      const nf=Number(r[nfCol]||0);
+      if(!nf) return false;
+      const dk=toDayKey(r[dateCol]);
+      if(!dk) return false; // sem data válida não conseguimos formar a chave nem o ano
+      if(getYear(dk)!==ano) return false; // fora do ano de referência
+      const key=nf+'|'+dk;
+      if(chavesComFrete.has(key)) return false; // tem frete → não entra
+      return true;
+    });
+
+    if(!semFrete.length){
+      info.textContent=`Nenhuma nota de ${ano} sem frete foi encontrada — todas as NFs do ano têm correspondência (NF+Data) nas bases de Frete carregadas.`;
+      info.style.color='var(--accent3)';
+      btn.textContent='🔎 Processar e Gerar Excel'; btn.disabled=false;
+      document.getElementById('aud-content').innerHTML='';
+      return;
+    }
+
+    // 6. Gera o Excel preservando TODAS as colunas originais da Base_Notas
+    const ws=XLSX.utils.json_to_sheet(semFrete);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `Sem Frete ${ano}`);
+    const today=new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+    XLSX.writeFile(wb, `Notas_Sem_Frete_${ano}_${today}.xlsx`);
+
+    info.textContent=`✅ ${semFrete.length.toLocaleString('pt-BR')} notas de ${ano} sem frete · Excel gerado e baixado`;
+    info.style.color='var(--accent3)';
+
+    // Resumo visual rápido
+    document.getElementById('aud-content').innerHTML=`
+      <div class="card">
+        <div class="ch"><span class="ct">Resumo da Auditoria</span><span class="cs">Ano ${ano} · chave NF+Data</span></div>
+        <div class="kpi-row">
+          <div class="kpi" style="--kc:var(--accent)"><div class="kpi-lbl">Total na Base_Notas</div><div class="kpi-val">${fmtN(rawNotas.length)}</div><div class="kpi-sub">Todas as linhas do arquivo</div></div>
+          <div class="kpi" style="--kc:var(--accent2)"><div class="kpi-lbl">Chaves NF+Data c/ Frete</div><div class="kpi-val">${fmtN(chavesComFrete.size)}</div><div class="kpi-sub">SP+MG+NC combinadas</div></div>
+          <div class="kpi" style="--kc:var(--danger)"><div class="kpi-lbl">Sem Frete (${ano})</div><div class="kpi-val">${fmtN(semFrete.length)}</div><div class="kpi-sub">Exportadas no Excel</div></div>
+        </div>
+      </div>`;
+
+  }catch(err){
+    info.textContent='❌ Erro: '+err.message;
+    info.style.color='var(--danger)';
+    console.error(err);
+  }
+  btn.textContent='🔎 Processar e Gerar Excel'; btn.disabled=false;
+}
+
 // ═══════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════
@@ -1508,6 +2724,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
       if(S.notas){document.getElementById('lbl-n').classList.add('loaded');document.getElementById('us-n').textContent=S.notas.length.toLocaleString('pt-BR')+' linhas';}
       if(S.cob)  {document.getElementById('lbl-c').classList.add('loaded');document.getElementById('us-c').textContent=S.cob.length.toLocaleString('pt-BR')+' linhas';}
       if(S.av)   {document.getElementById('lbl-a').classList.add('loaded');document.getElementById('us-a').textContent=S.av.length.toLocaleString('pt-BR')+' linhas';}
+      if(S.frete){document.getElementById('frt-info').textContent=`✅ ${S.frete.length.toLocaleString('pt-BR')} registros carregados (sessão salva)`;document.getElementById('frt-info').style.color='var(--accent3)';}
       updateDbg();buildActive();
     }
   }catch(e){console.warn('Erro ao carregar dados salvos:',e);}
@@ -1517,7 +2734,8 @@ window.addEventListener('DOMContentLoaded',async()=>{
 // ═══════════════════════════════════════════════════
 //  TELA DE ACOMPANHAMENTO
 // ═══════════════════════════════════════════════════
-let AC_DATA = null; // normalized rows
+let AC_DATA = null; // normalized rows (active, may have exclusions)
+let AC_DATA_RAW = null; // full normalized rows before any exclusions
 
 // Senha protegida por hash SHA-256 — a senha real não aparece no código-fonte.
 // Para trocar a senha: acesse https://emn178.github.io/online-tools/sha256.html
@@ -1561,7 +2779,15 @@ function openDashboard(){
 async function checkPwd(){
   const val=document.getElementById('pwd-input').value;
   if(!val){ document.getElementById('pwd-error').textContent='Digite a senha.'; return; }
-  const hash=await sha256(val);
+  let hash;
+  try{
+    hash=await sha256(val);
+  }catch(err){
+    // crypto.subtle indisponível (ex: abrindo o arquivo localmente via file://, sem HTTPS)
+    document.getElementById('pwd-error').textContent='Erro de segurança do navegador. Acesse via https:// (ex: GitHub Pages) em vez de abrir o arquivo localmente.';
+    console.error('sha256 falhou:',err);
+    return;
+  }
   if(hash===DASH_HASH){
     document.getElementById('pwd-modal').style.display='none';
     document.getElementById('main-dashboard').style.display='block';
@@ -1573,6 +2799,12 @@ async function checkPwd(){
     document.getElementById('pwd-input').value='';
     document.getElementById('pwd-input').focus();
   }
+}
+
+function closeDashboard(){
+  document.getElementById('main-dashboard').style.display='none';
+  document.getElementById('acomp-overlay').style.display='block';
+  setHeaderMode('acomp');
 }
 
 function setHeaderMode(mode){
@@ -1595,27 +2827,6 @@ function setHeaderMode(mode){
     btn.onclick=openDashboard;
     btn.style.cssText='background:rgba(240,180,41,.12);border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:7px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s';
   }
-}
-
-function checkPwd(){
-  const val=document.getElementById('pwd-input').value;
-  if(val===DASH_PASSWORD){
-    document.getElementById('pwd-modal').style.display='none';
-    document.getElementById('main-dashboard').style.display='block';
-    document.getElementById('acomp-overlay').style.display='none';
-    setHeaderMode('dashboard');
-    if(Object.values(S).some(v=>v&&Array.isArray(v)&&v.length)) buildActive();
-  } else {
-    document.getElementById('pwd-error').textContent='Senha incorreta. Tente novamente.';
-    document.getElementById('pwd-input').value='';
-    document.getElementById('pwd-input').focus();
-  }
-}
-
-function closeDashboard(){
-  document.getElementById('main-dashboard').style.display='none';
-  document.getElementById('acomp-overlay').style.display='block';
-  setHeaderMode('acomp');
 }
 
 // File upload
@@ -1657,6 +2868,7 @@ async function applyAcomp(){
     const ext=f.name.split('.').pop().toLowerCase();
     const raw=ext==='csv'?await readCSV(f):await readXLSX(f);
     AC_DATA=normalizeAcomp(raw);
+    AC_DATA_RAW=[...AC_DATA]; // snapshot before exclusions are applied
     const rawCount=raw.length, filtCount=AC_DATA.length;
     if(rawCount===0){
       document.getElementById('ac-info').textContent='⚠️ 0 linhas lidas — arquivo usa formato Strict Open XML. Abra no Excel → Salvar Como → Excel Workbook (.xlsx) ou exporte como CSV.';
@@ -1727,6 +2939,7 @@ function normalizeAcomp(rows){
       const hoje=new Date(); hoje.setHours(0,0,0,0);
       diasAtraso=Math.max(1,Math.round((hoje-prev)/(86400000)));
     }
+    const existemOc=(rGet(r,'Existem ocorrências','Existem ocorrencias')||'').toString().trim().toLowerCase()==='sim';
     return{
       nota_fiscal: Number(rGet(r,'Nota Fiscal','nota_fiscal')||0),
       transportadora: cleanTransp((rGet(r,'Transportadora','transportadora')||'').toString().trim()),
@@ -1741,12 +2954,17 @@ function normalizeAcomp(rows){
       data_criacao: dc,
       statusAc,
       diasAtraso,
+      existemOc,
+      ocorrMacro:(rGet(r,'Última Ocorrência (Macro)','Ultima Ocorrencia (Macro)')||'').toString().trim()||'(sem detalhe)',
+      ocorrMicro:(rGet(r,'Última Ocorrência (Micro)','Ultima Ocorrencia (Micro)')||'').toString().trim()||'(sem detalhe)',
+      ocorrMsg:  (rGet(r,'Última Ocorrência (Mensagem)','Ultima Ocorrencia (Mensagem)')||'').toString().trim(),
+      qtdOcorr:  Number(rGet(r,'Quantidade de Ocorrências','Quantidade de Ocorrencias')||0)||0,
     };
   }).filter(r=>r.statusAc!=='Cancelado');
 }
 
 // ── Acompanhamento drill state
-const AC_DRILL = { transp:null, uf:null, regiao:null, canal:null };
+const AC_DRILL = { transp:new Set(), uf:null, regiao:null, canal:null };
 
 // ── Exclusões e comentários (persistidos no localStorage) ──
 const AC_EXC_KEY = 'ac_excluidos_v1';
@@ -1832,13 +3050,36 @@ function acExcluirNF(nf){
   buildAcomp();
 }
 
+function acRestaurarNF(nf){
+  nf=Number(nf);
+  AC_EXCLUIDOS.delete(nf);
+  acSaveExcluidos();
+  // Restore from raw normalized data (before exclusions filter)
+  if(AC_DATA_RAW){
+    const existed=AC_DATA_RAW.find(r=>r.nota_fiscal===nf);
+    if(existed && !AC_DATA.find(r=>r.nota_fiscal===nf)){
+      AC_DATA.push(existed);
+      AC_DATA.sort((a,b)=>(b.diasAtraso||0)-(a.diasAtraso||0));
+    }
+  }
+  buildAcomp();
+}
+
 function acRestaurarTudo(){
   if(!confirm('Restaurar todas as '+AC_EXCLUIDOS.size+' NFs excluídas?')) return;
   AC_EXCLUIDOS.clear();
   acSaveExcluidos();
-  // Re-normalize from scratch is not possible without the file, but we can reload
-  alert('Recarregue o arquivo de entregas para restaurar as NFs excluídas.');
+  if(AC_DATA_RAW){
+    AC_DATA=[...AC_DATA_RAW];
+    AC_DATA.sort((a,b)=>(b.diasAtraso||0)-(a.diasAtraso||0));
+  }
   buildAcomp();
+}
+
+function acToggleExcluidos(){
+  const el=document.getElementById('ac-excl-panel');
+  if(!el) return;
+  el.style.display=el.style.display==='none'?'block':'none';
 }
 
 function acSaveComment(nf){
@@ -1870,7 +3111,13 @@ function acEditComment(nf){
   document.getElementById('ac-inp-'+nf)?.focus();
 }
 function acDrill(key, val){
-  AC_DRILL[key] = AC_DRILL[key]===val ? null : val;
+  if(key==='transp'){
+    // Toggle: multi-select para transportadoras
+    if(AC_DRILL.transp.has(val)) AC_DRILL.transp.delete(val);
+    else AC_DRILL.transp.add(val);
+  } else {
+    AC_DRILL[key] = AC_DRILL[key]===val ? null : val;
+  }
   buildAcomp();
 }
 
@@ -1881,10 +3128,10 @@ function buildAcomp(){
   const ALL=AC_DATA.filter(r=>!AC_EXCLUIDOS.has(r.nota_fiscal));
   const dT=AC_DRILL.transp, dU=AC_DRILL.uf, dR=AC_DRILL.regiao;
 
-  // Apply drill filters
+  // Apply drill filters (dT is a Set — multi-select)
   const dC=AC_DRILL.canal;
   const rows=ALL.filter(r=>{
-    if(dT && r.transportadora!==dT) return false;
+    if(dT.size>0 && !dT.has(r.transportadora)) return false;
     if(dU && r.uf!==dU) return false;
     if(dR){ const us=REGIOES[dR]; if(us&&!us.includes(r.uf)) return false; }
     if(dC && r.acCanal!==dC) return false;
@@ -1956,7 +3203,7 @@ function buildAcomp(){
   const drillHtml=drillParts.length
     ? `<div style="margin-bottom:12px;display:flex;align-items:center;gap:10px">
         <span style="font-size:13px;color:var(--accent);font-family:'DM Mono',monospace">● ${drillParts.join(' · ')}</span>
-        <button onclick="AC_DRILL.transp=null;AC_DRILL.uf=null;AC_DRILL.regiao=null;AC_DRILL.canal=null;buildAcomp()" style="font-size:13px;background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);color:var(--accent);border-radius:4px;padding:2px 9px;cursor:pointer">✕ Limpar drill</button>
+        <button onclick="AC_DRILL.transp.clear();AC_DRILL.uf=null;AC_DRILL.regiao=null;AC_DRILL.canal=null;buildAcomp()" style="font-size:13px;background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);color:var(--accent);border-radius:4px;padding:2px 9px;cursor:pointer">✕ Limpar drill</button>
       </div>` : '';
 
   let html=drillHtml;
@@ -1964,7 +3211,7 @@ function buildAcomp(){
   // ── FILTER BAR ────────────────────────────────────────────────
   // Transportadora buttons
   const transpBtns=allTransps.map(t=>{
-    const sel=dT===t;
+    const sel=dT.has(t);
     const col=transpColorMap[t]||'#8b949e';
     return `<button onclick="acDrill('transp','${t}')" style="padding:4px 12px;font-size:13px;border-radius:20px;border:1px solid ${sel?col:'var(--border)'};background:${sel?col+'33':'var(--surface2)'};color:${sel?col:'var(--text2)'};cursor:pointer;font-family:inherit;font-weight:${sel?600:400};transition:all .2s">${t}</button>`;
   }).join('');
@@ -2017,7 +3264,7 @@ function buildAcomp(){
   </div>`;
 
   // ── Row 2: stacked ───────────────────────────────────────────
-  const tListHtml=transpList.slice(0,12).map((t,i)=>`<span onclick="acDrill('transp','${t}')" style="display:flex;align-items:center;gap:4px;font-size:13px;color:${dT&&dT!==t?'var(--text3)':'var(--text2)'};cursor:pointer"><span style="width:9px;height:9px;border-radius:2px;background:${tc(t)};display:inline-block"></span>${t}</span>`).join('');
+  const tListHtml=transpList.slice(0,12).map((t,i)=>`<span onclick="acDrill('transp','${t}')" style="display:flex;align-items:center;gap:4px;font-size:13px;color:${dT.size>0&&!dT.has(t)?'var(--text3)':'var(--text2)'};cursor:pointer"><span style="width:9px;height:9px;border-radius:2px;background:${tc(t)};display:inline-block"></span>${t}</span>`).join('');
   html+=`<div class="card" style="margin-bottom:14px">
     <div class="ch"><span class="ct">Transportadoras por Faixa de Dias em Atraso</span><span class="cs">${nAtr} notas em atraso</span></div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">${tListHtml}</div>
@@ -2097,7 +3344,29 @@ function buildAcomp(){
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
       <input class="tbl-search" id="${atrSrchId}" placeholder="Buscar por NF, cidade, UF, transportadora…" oninput="filterTable('${atrSrchId}')" style="flex:1;min-width:200px;margin-bottom:0">
-      ${AC_EXCLUIDOS.size>0?`<button onclick="acRestaurarTudo()" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--accent3);border-radius:5px;padding:5px 12px;font-size:13px;cursor:pointer;font-family:inherit">↺ Restaurar excluídas (${AC_EXCLUIDOS.size})</button>`:''}
+      ${AC_EXCLUIDOS.size>0?('<div style="position:relative;display:inline-block">'+
+        '<button onclick="acToggleExcluidos()" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--accent3);border-radius:5px;padding:5px 12px;font-size:13px;cursor:pointer;font-family:inherit">↺ Notas excluídas ('+AC_EXCLUIDOS.size+') ▾</button>'+
+        '<div id="ac-excl-panel" style="display:none;position:absolute;right:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:4px;width:360px;max-width:95vw;box-shadow:0 8px 24px rgba(0,0,0,.4)">'+
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px">'+
+            '<span style="font-size:13px;font-weight:600;color:var(--text)">NFs excluídas desta sessão</span>'+
+            '<button onclick="acRestaurarTudo()" style="font-size:12px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--accent3);border-radius:4px;padding:3px 10px;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0">Restaurar todas</button>'+
+          '</div>'+
+          '<div style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">'+
+          [...AC_EXCLUIDOS].map(nf=>{
+            const r=AC_DATA_RAW?.find(x=>x.nota_fiscal===nf);
+            const transp=r?.transportadora||'';
+            const uf=r?.uf||'';
+            const dias=(r?.diasAtraso||0)+'d atraso';
+            return '<div style="padding:8px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)">'+
+              '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'+
+                '<button onclick="acRestaurarNF('+nf+')" style="font-size:12px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4);color:var(--accent3);border-radius:4px;padding:3px 10px;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0">↩ Restaurar</button>'+
+                '<span style="font-size:14px;font-weight:600;font-family:DM Mono,monospace;color:var(--text)">NF '+nf+'</span>'+
+              '</div>'+
+              (r?'<div style="font-size:12px;color:var(--text3);padding-left:2px">'+transp+(uf?' · '+uf:'')+' · '+dias+'</div>':'')+
+              '</div>';
+          }).join('')+
+          '</div>'+
+        '</div></div>'):''}
     </div>
     <div class="scroll-table" style="max-height:380px"><table>
       <thead><tr><th>NF</th><th>Transportadora</th><th>Cidade</th><th>UF</th><th>Prev. Entrega</th><th class="tr">Dias</th><th>Comentário</th><th></th></tr></thead>
@@ -2249,7 +3518,7 @@ function buildAcomp(){
     {
       const lbls=transpAtr.slice(0,12).map(x=>x[0]);
       const dat =transpAtr.slice(0,12).map(x=>x[1]);
-      const bgc =lbls.map(l=>dT&&dT!==l?tc(l,'44'):tc(l,'cc'));
+      const bgc =lbls.map(l=>dT.size>0&&!dT.has(l)?tc(l,'44'):tc(l,'cc'));
       mkAcBar('ac-bar-transp', lbls, dat, '#ef4444', 'transp', true, false,
         [{label:'NFs',data:dat,backgroundColor:bgc,borderColor:lbls.map(l=>tc(l)),borderWidth:1,borderRadius:3}]);
     }
@@ -2259,7 +3528,7 @@ function buildAcomp(){
     const stackedDs=tList.map((t)=>({
       label:t,
       data:bLabels.map(k=>(transpBuckets[t]&&transpBuckets[t][k])||0),
-      backgroundColor:dT&&dT!==t?tc(t,'44'):tc(t,'cc'),
+      backgroundColor:dT.size>0&&!dT.has(t)?tc(t,'44'):tc(t,'cc'),
       borderWidth:0,borderRadius:2,
     }));
     mkAcBar('ac-stacked', bLabels.map(k=>k==='20+'?'20+':k+'d'), null, '#3b82f6', null, false, true, stackedDs);
